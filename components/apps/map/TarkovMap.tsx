@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MapContainer, ImageOverlay, TileLayer, useMapEvents, CircleMarker, Popup, Marker, useMap, GeoJSON } from 'react-leaflet';
+import { MapContainer, ImageOverlay, TileLayer, useMapEvents, Popup, Marker, useMap, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useMapStore } from '@/store/useMapStore';
 import { useUIStore } from '@/store/useUIStore';
 import MapEditor from './MapEditor';
-import CoordinateGrid from '@/components/layers/CoordinateGrid';
+import CoordinateGrid from '@/components/apps/map/layers/CoordinateGrid';
 
 const CRS = L.CRS.Simple;
 

@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 
-// --- 맵별 고정 데이터 (추후 DB/파일 분리 가능) ---
+// Point of Interest Data
 export interface POIData {
-  id: string; // "customs-ext-1"
+  id: string;
   mapId: string;
   name: string;
   type: 'Extract' | 'Boss' | 'Quest';
@@ -42,14 +42,15 @@ export interface MapData {
   type: 'image' | 'tile'; // 'image' = Game Map, 'tile' = Real World Map
   imageUrl?: string;
   tileUrl?: string; // e.g., 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-  width?: number; // Required for 'image'
-  height?: number; // Required for 'image'
+  width?: number; 
+  height?: number;
   attribution?: string; // For OSM/Google compliance
 }
 
 export const MAPS: MapData[] = [
-  { id: 'customs-url', name: 'Customs-url', type: 'image', imageUrl: 'https://i.redd.it/lzrjcjmtbsr51.png', width: 4097, height: 2142 },
-  { id: 'customs-img', name: 'Customs-img', type: 'image', imageUrl: 'maps/Customs_Interactive_Map_Base.png', width: 4097, height: 2142 },
+  { id: 'customs', name: 'Customs', type: 'image', imageUrl: 'maps/Customs_Interactive_Map_Base.png', width: 4097, height: 2142 }, // https://escapefromtarkov.fandom.com/wiki/Customs?, Made by GLORY4LIFE, MONKMONKMONK
+  { id: 'reserve', name: 'Reserve', type: 'image', imageUrl: 'maps/Reserve_Interactive_Map_Base.png', width: 4701, height: 2785 }, // https://escapefromtarkov.fandom.com/wiki/Map:Reserve?, Made by JINDOUZ
+  { id: 'woods', name: 'Woods', type: 'image', imageUrl: 'maps/Woods_Interactive_Map_Base.png', width: 6994, height: 6843 }, // https://escapefromtarkov.fandom.com/wiki/Map:Woods?, Made by JINDOUZ
 ];
 
 interface MapState {
@@ -59,7 +60,7 @@ interface MapState {
   addMap: (map: MapData) => void;
   removeMap: (id: string) => void;
 
-  // Mission Planning (New)
+  // Mission Planning
   startPoint: { x: number, y: number } | null;
   selectedExtracts: string[]; // ONE POI ID (Single Selection)
   isStartPointLocked: boolean; // Lock logic
@@ -86,7 +87,7 @@ interface MapState {
   toggleEditMode: () => void;
   setDrawType: (type: 'path' | 'marker' | 'spawn' | 'danger' | 'hand') => void;
   addFeature: (feature: FeatureData) => void;
-  updateFeature: (id: string, partial: Partial<FeatureData>) => void; // CHANGED to Partial
+  updateFeature: (id: string, partial: Partial<FeatureData>) => void;
   removeFeature: (id: string) => void;
   clearFeatures: () => void;
   setFeatures: (features: FeatureData[]) => void;
@@ -96,12 +97,12 @@ interface MapState {
   showBosses: boolean;
   showQuests: boolean;
   showGrid: boolean;
-  showDrawings: boolean; // NEW
+  showDrawings: boolean; 
   toggleExtracts: () => void;
   toggleBosses: () => void;
   toggleQuests: () => void;
   toggleGrid: () => void;
-  toggleDrawings: () => void; // NEW
+  toggleDrawings: () => void;
 
   // Mission Manager
   savedMissions: SavedMission[];
@@ -137,13 +138,12 @@ export const useMapStore = create<MapState>((set) => ({
     };
   }),
   toggleStartPointLock: () => set((state) => ({ isStartPointLocked: !state.isStartPointLocked })),
-  resetMission: () => set({ startPoint: null, selectedExtracts: [], isStartPointLocked: true }), // Reset to locked
+  resetMission: () => set({ startPoint: null, selectedExtracts: [], isStartPointLocked: true }),
 
   // Map Controls (External)
-  // mapInstance, isFullscreen moved to useUIStore
   currentZoom: 0,
   isMapOpen: false,
-  isOpsControllerOpen: false, // Default open
+  isOpsControllerOpen: false, // Default
   setZoom: (zoom) => set({ currentZoom: zoom }),
   toggleMapOpen: () => set((state) => ({ isMapOpen: !state.isMapOpen })),
   toggleOpsController: () => set((state) => ({ isOpsControllerOpen: !state.isOpsControllerOpen })),
@@ -174,7 +174,8 @@ export const useMapStore = create<MapState>((set) => ({
   toggleBosses: () => set((state) => ({ showBosses: !state.showBosses })),
   toggleQuests: () => set((state) => ({ showQuests: !state.showQuests })),
   toggleGrid: () => set((state) => ({ showGrid: !state.showGrid })),
-  toggleDrawings: () => set((state) => ({ showDrawings: !state.showDrawings })), // NEW
+  toggleDrawings: () => set((state) => ({ showDrawings: !state.showDrawings })),
+
 
   // Mission Manager (Saved Missions)
   savedMissions: [],

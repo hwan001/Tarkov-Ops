@@ -2,7 +2,6 @@
 
 import { useSettingStore } from "@/store/useSettingStore";
 
-
 export default function Wallpaper() {
     const { wallpaperSrc } = useSettingStore();
 

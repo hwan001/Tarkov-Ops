@@ -276,7 +276,7 @@ export default function OpsController() {
         <Draggable nodeRef={nodeRef} bounds="parent" handle=".drag-handle" disabled={isFullscreen}>
             <div
                 ref={nodeRef}
-                className={`absolute top-4 right-4 z-[10000] flex flex-col ${isMinimized ? 'w-auto' : 'w-72'} bg-zinc-900/95 rounded-xl shadow-2xl border border-zinc-700 backdrop-blur-sm overflow-hidden`}
+                className={`absolute top-16 right-4 z-[10000] flex flex-col ${isMinimized ? 'w-auto' : 'w-72'} bg-zinc-900/95 rounded-xl shadow-2xl border border-zinc-700 backdrop-blur-sm overflow-hidden`}
                 onMouseDown={stopPropagation}
                 onDoubleClick={stopPropagation}
                 onWheel={stopPropagation}

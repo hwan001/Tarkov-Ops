@@ -13,8 +13,8 @@ export default function CoordinateGrid({ gridSize = 100 }: CoordinateGridProps) 
 
     if (!showGrid) return null;
 
-    const width = currentMap.width;
-    const height = currentMap.height;
+    const width = currentMap.width || 0;
+    const height = currentMap.height || 0;
 
     // Generate Vertical Lines (X axis)
     const verticalLines = [];

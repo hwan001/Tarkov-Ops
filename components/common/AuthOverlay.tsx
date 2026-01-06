@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Key, User, Terminal } from 'lucide-react';
+import { Shield, Key, Terminal } from 'lucide-react';
 
 interface AuthCredentials {
     apiKey: string;

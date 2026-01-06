@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Draggable from 'react-draggable';
 import { Settings, User, Network, Monitor, RefreshCw, Trash2, Save } from 'lucide-react';
 import { useSquadStore } from '@/store/useSquadStore';
-import WindowHeader from '@/components/common/WindowHeader';
 import { useSettingStore } from '@/store/useSettingStore';
-import { useWindowControls } from '@/hooks/useWindowControls';
 import StatusIndicator, { StatusType } from '@/components/common/StatusIndicator';
+import WindowFrame from '@/components/common/WindowFrame';
 
 interface SettingsWindowProps {
     isOpen: boolean;
@@ -31,25 +29,6 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
     const updateNetwork = (updates: any) => {
         setNetwork(updates);
     };
-
-    // Use Custom Hook for Window Controls
-    const {
-        nodeRef,
-        isMaximized,
-        isMinimized,
-        windowSize,
-        zIndex,
-        toggleMaximize,
-        toggleMinimize,
-        startResizing,
-        handleFocus
-    } = useWindowControls({
-        windowId: 'settings',
-        initialWidth: 400,
-        initialHeight: 500
-    });
-
-    const handleMinimize = (e?: any) => toggleMinimize(e);
 
     // Store State
     const { nickname } = useSquadStore();
@@ -178,262 +157,234 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
         }
     };
 
-    if (!isOpen) return null;
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'general':
+                return (
+                    <div className="space-y-4">
+                        <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2 border-b border-zinc-800 pb-1">User Profile</h3>
 
-    // Width/Height logic
-    // [Fix] Maximize: Force explicit style override with transform: none
-    const appliedStyle = isMinimized
-        ? { height: 'min-content', width: '400px', zIndex }
-        : (isMaximized
-            ? { width: '100%', height: '100%', transform: 'none', zIndex }
-            : { width: windowSize.width, height: windowSize.height, zIndex });
+                        <div className="space-y-1">
+                            <label className="text-[10px] text-zinc-400">Callsign</label>
+                            <input
+                                type="text"
+                                value={localNick}
+                                onChange={(e) => setLocalNick(e.target.value)}
+                                className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none"
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-[10px] text-zinc-400">API Key</label>
+                            <input
+                                type="password"
+                                value={localApiKey}
+                                onChange={(e) => setLocalApiKey(e.target.value)}
+                                className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none font-mono"
+                            />
+                        </div>
+
+                        <button
+                            onClick={handleSaveGeneral}
+                            className="w-full mt-4 flex items-center justify-center gap-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-xs transition-colors border border-zinc-700"
+                        >
+                            <Save size={12} /> Save Changes
+                        </button>
+                    </div>
+                );
+            case 'network':
+                return (
+                    <div className="space-y-4">
+                        <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2 border-b border-zinc-800 pb-1">Connection Mode</h3>
+
+                        <div className="space-y-2">
+                            <label className={`flex items-center justify-between p-2 rounded border cursor-pointer transition-all ${network.connectionMode === 'p2p' ? 'bg-emerald-900/20 border-emerald-500' : 'bg-zinc-950 border-zinc-800 hover:bg-zinc-800'}`}>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="radio"
+                                        name="netmode"
+                                        checked={network.connectionMode === 'p2p'}
+                                        onChange={() => updateNetwork({ connectionMode: 'p2p' })}
+                                        className="accent-emerald-500"
+                                    />
+                                    <div className="text-xs">
+                                        <div className="font-bold text-zinc-200">P2P (Serverless)</div>
+                                        <div className="text-[10px] text-zinc-500">Fast, local only, no setup required.</div>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label className={`flex items-center justify-between p-2 rounded border cursor-pointer transition-all ${network.connectionMode === 'server' ? 'bg-blue-900/20 border-blue-500' : 'bg-zinc-950 border-zinc-800 hover:bg-zinc-800'}`}>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="radio"
+                                        name="netmode"
+                                        checked={network.connectionMode === 'server'}
+                                        onChange={() => updateNetwork({ connectionMode: 'server' })}
+                                        className="accent-blue-500"
+                                    />
+                                    <div className="text-xs">
+                                        <div className="font-bold text-zinc-200">Dedicated Server</div>
+                                        <div className="text-[10px] text-zinc-500">Stable, cross-network, requires Docker.</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        {/* Detailed Configuration */}
+                        <h3 className="text-xs font-bold text-zinc-500 uppercase mt-6 mb-2 border-b border-zinc-800 pb-1">Configuration</h3>
+
+                        {network.connectionMode === 'p2p' ? (
+                            <div className="space-y-3">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-zinc-400">Signaling Servers (One per line)</label>
+                                    <textarea
+                                        value={network.p2pSignalingUrls?.join('\n') || ''}
+                                        onChange={(e) => updateNetwork({ p2pSignalingUrls: e.target.value.split('\n').filter(l => l.trim()) })}
+                                        className="w-full h-20 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none font-mono"
+                                        placeholder="wss://y-webrtc-signaling-eu.herokuapp.com"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-zinc-400">ICE Servers (STUN/TURN, One per line)</label>
+                                    <textarea
+                                        value={network.p2pIceServers?.join('\n') || ''}
+                                        onChange={(e) => updateNetwork({ p2pIceServers: e.target.value.split('\n').filter(l => l.trim()) })}
+                                        className="w-full h-20 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none font-mono"
+                                        placeholder="stun:stun.l.google.com:19302"
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-zinc-400">WebSocket URL</label>
+                                    <input
+                                        type="text"
+                                        value={network.webSocketServerUrl || ''}
+                                        onChange={(e) => updateNetwork({ webSocketServerUrl: e.target.value })}
+                                        className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none font-mono"
+                                        placeholder="ws://localhost:1234"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Test Connection Button */}
+                        <div className="space-y-2 mt-4">
+                            <button
+                                onClick={handleTestConnection}
+                                disabled={testStatus === 'loading'}
+                                className="w-full flex items-center justify-center gap-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-zinc-300 rounded text-xs transition-colors border border-zinc-700"
+                            >
+                                <Network size={12} />
+                                {testStatus === 'loading' ? 'Testing...' : 'Test Connection'}
+                            </button>
+
+                            <StatusIndicator status={testStatus} message={testMessage} />
+                        </div>
+
+                    </div>
+                );
+            case 'system':
+                return (
+                    <div className="space-y-4">
+                        <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2 border-b border-zinc-800 pb-1">Appearance</h3>
+
+                        <div className="space-y-2 mb-6">
+                            <label className="text-[10px] text-zinc-400">Wallpaper URL</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={wallpaperSrc}
+                                    onChange={(e) => setWallpaperSrc(e.target.value)}
+                                    placeholder="Enter image URL..."
+                                    className="flex-1 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none"
+                                />
+                                <button
+                                    onClick={() => wallpaperSrc && addWallpaperSrc(wallpaperSrc)}
+                                    className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-xs transition-colors border border-zinc-700"
+                                >
+                                    Add
+                                </button>
+                            </div>
+                            <select
+                                value={wallpapers.includes(wallpaperSrc) ? wallpaperSrc : ""}
+                                onChange={(e) => setWallpaperSrc(e.target.value)}
+                                className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none"
+                            >
+                                <option value="" disabled>Select from presets...</option>
+                                {wallpapers.map((wp: string) => (
+                                    <option key={wp} value={wp}>
+                                        {wp}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2 border-b border-zinc-800 pb-1">Danger Zone</h3>
+
+
+                        <button
+                            onClick={() => location.reload()}
+                            className="w-full flex items-center justify-start gap-2 p-2 rounded hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors text-xs"
+                        >
+                            <RefreshCw size={14} className="text-blue-500" />
+                            <span>Reboot System (Reload)</span>
+                        </button>
+
+                        <button
+                            onClick={handleClearData}
+                            className="w-full flex items-center justify-start gap-2 p-2 rounded hover:bg-red-900/20 text-zinc-400 hover:text-red-400 transition-colors text-xs"
+                        >
+                            <Trash2 size={14} className="text-red-500" />
+                            <span>Factory Reset (Clear Data)</span>
+                        </button>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
 
     return (
-        <Draggable nodeRef={nodeRef} handle=".window-header" bounds="parent" disabled={isMaximized && !isMinimized}>
-            <div
-                ref={nodeRef}
-                style={appliedStyle}
-                onMouseDownCapture={handleFocus}
-                className={`flex flex-col bg-zinc-900/95 border border-zinc-700 rounded-lg shadow-2xl backdrop-blur-sm overflow-hidden 
-                    ${isMaximized && !isMinimized ? '!fixed !inset-0 !rounded-none !border-0 !m-0 !top-0 !left-0 !transform-none' : 'absolute top-20 left-20'}
-                `}
-            >
-                {/* Header */}
-                <WindowHeader
-                    title="System Configuration"
-                    icon={Settings}
-                    onMinimize={handleMinimize}
-                    onMaximize={toggleMaximize}
-                    isMinimized={isMinimized}
-                    isMaximized={isMaximized}
-                    onDoubleClick={toggleMaximize}
-                    onClose={onClose}
-                    className="window-header cursor-move"
+        <WindowFrame
+            windowId="settings"
+            title="System Configuration"
+            icon={Settings}
+            isOpen={isOpen}
+            onClose={onClose}
+            defaultWidth={400}
+            defaultHeight={500}
+            contentClassName="flex flex-row h-full"
+        >
+            {/* Sidebar Tabs */}
+            <div className="w-16 bg-zinc-950 flex flex-col border-r border-zinc-800 pt-2 shrink-0">
+                <TabButton
+                    active={activeTab === 'general'}
+                    onClick={() => setActiveTab('general')}
+                    icon={User}
+                    label="General"
                 />
-
-                {/* Body - Hidden if minimized */}
-                {!isMinimized && (
-                    <div className="flex flex-1 min-h-[300px]">
-                        {/* Sidebar Tabs */}
-                        <div className="w-24 bg-zinc-950 border-r border-zinc-800 flex flex-col pt-2">
-                            <TabButton
-                                active={activeTab === 'general'}
-                                onClick={() => setActiveTab('general')}
-                                icon={User}
-                                label="General"
-                            />
-                            <TabButton
-                                active={activeTab === 'network'}
-                                onClick={() => setActiveTab('network')}
-                                icon={Network}
-                                label="Network"
-                            />
-                            <TabButton
-                                active={activeTab === 'system'}
-                                onClick={() => setActiveTab('system')}
-                                icon={Monitor}
-                                label="System"
-                            />
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 p-4 bg-zinc-900/50">
-                            {activeTab === 'general' && (
-                                <div className="space-y-4">
-                                    <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2 border-b border-zinc-800 pb-1">User Profile</h3>
-
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] text-zinc-400">Callsign</label>
-                                        <input
-                                            type="text"
-                                            value={localNick}
-                                            onChange={(e) => setLocalNick(e.target.value)}
-                                            className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] text-zinc-400">API Key</label>
-                                        <input
-                                            type="password"
-                                            value={localApiKey}
-                                            onChange={(e) => setLocalApiKey(e.target.value)}
-                                            className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none font-mono"
-                                        />
-                                    </div>
-
-                                    <button
-                                        onClick={handleSaveGeneral}
-                                        className="w-full mt-4 flex items-center justify-center gap-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-xs transition-colors border border-zinc-700"
-                                    >
-                                        <Save size={12} /> Save Changes
-                                    </button>
-                                </div>
-                            )}
-
-                            {activeTab === 'network' && (
-                                <div className="space-y-4">
-                                    <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2 border-b border-zinc-800 pb-1">Connection Mode</h3>
-
-                                    <div className="space-y-2">
-                                        <label className={`flex items-center justify-between p-2 rounded border cursor-pointer transition-all ${network.connectionMode === 'p2p' ? 'bg-emerald-900/20 border-emerald-500' : 'bg-zinc-950 border-zinc-800 hover:bg-zinc-800'}`}>
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="radio"
-                                                    name="netmode"
-                                                    checked={network.connectionMode === 'p2p'}
-                                                    onChange={() => updateNetwork({ connectionMode: 'p2p' })}
-                                                    className="accent-emerald-500"
-                                                />
-                                                <div className="text-xs">
-                                                    <div className="font-bold text-zinc-200">P2P (Serverless)</div>
-                                                    <div className="text-[10px] text-zinc-500">Fast, local only, no setup required.</div>
-                                                </div>
-                                            </div>
-                                        </label>
-
-                                        <label className={`flex items-center justify-between p-2 rounded border cursor-pointer transition-all ${network.connectionMode === 'server' ? 'bg-blue-900/20 border-blue-500' : 'bg-zinc-950 border-zinc-800 hover:bg-zinc-800'}`}>
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="radio"
-                                                    name="netmode"
-                                                    checked={network.connectionMode === 'server'}
-                                                    onChange={() => updateNetwork({ connectionMode: 'server' })}
-                                                    className="accent-blue-500"
-                                                />
-                                                <div className="text-xs">
-                                                    <div className="font-bold text-zinc-200">Dedicated Server</div>
-                                                    <div className="text-[10px] text-zinc-500">Stable, cross-network, requires Docker.</div>
-                                                </div>
-                                            </div>
-                                        </label>
-                                    </div>
-
-                                    {/* Detailed Configuration */}
-                                    <h3 className="text-xs font-bold text-zinc-500 uppercase mt-6 mb-2 border-b border-zinc-800 pb-1">Configuration</h3>
-
-                                    {network.connectionMode === 'p2p' ? (
-                                        <div className="space-y-3">
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] text-zinc-400">Signaling Servers (One per line)</label>
-                                                <textarea
-                                                    value={network.p2pSignalingUrls?.join('\n') || ''}
-                                                    onChange={(e) => updateNetwork({ p2pSignalingUrls: e.target.value.split('\n').filter(l => l.trim()) })}
-                                                    className="w-full h-20 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none font-mono"
-                                                    placeholder="wss://y-webrtc-signaling-eu.herokuapp.com"
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] text-zinc-400">ICE Servers (STUN/TURN, One per line)</label>
-                                                <textarea
-                                                    value={network.p2pIceServers?.join('\n') || ''}
-                                                    onChange={(e) => updateNetwork({ p2pIceServers: e.target.value.split('\n').filter(l => l.trim()) })}
-                                                    className="w-full h-20 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none font-mono"
-                                                    placeholder="stun:stun.l.google.com:19302"
-                                                />
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] text-zinc-400">WebSocket URL</label>
-                                                <input
-                                                    type="text"
-                                                    value={network.webSocketServerUrl || ''}
-                                                    onChange={(e) => updateNetwork({ webSocketServerUrl: e.target.value })}
-                                                    className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none font-mono"
-                                                    placeholder="ws://localhost:1234"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Test Connection Button */}
-                                    <div className="space-y-2 mt-4">
-                                        <button
-                                            onClick={handleTestConnection}
-                                            disabled={testStatus === 'loading'}
-                                            className="w-full flex items-center justify-center gap-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-zinc-300 rounded text-xs transition-colors border border-zinc-700"
-                                        >
-                                            <Network size={12} />
-                                            {testStatus === 'loading' ? 'Testing...' : 'Test Connection'}
-                                        </button>
-
-                                        <StatusIndicator status={testStatus} message={testMessage} />
-                                    </div>
-
-                                </div>
-                            )}
-
-                            {activeTab === 'system' && (
-                                <div className="space-y-4">
-                                    <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2 border-b border-zinc-800 pb-1">Appearance</h3>
-
-                                    <div className="space-y-2 mb-6">
-                                        <label className="text-[10px] text-zinc-400">Wallpaper URL</label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={wallpaperSrc}
-                                                onChange={(e) => setWallpaperSrc(e.target.value)}
-                                                placeholder="Enter image URL..."
-                                                className="flex-1 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none"
-                                            />
-                                            <button
-                                                onClick={() => wallpaperSrc && addWallpaperSrc(wallpaperSrc)}
-                                                className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-xs transition-colors border border-zinc-700"
-                                            >
-                                                Add
-                                            </button>
-                                        </div>
-                                        <select
-                                            value={wallpapers.includes(wallpaperSrc) ? wallpaperSrc : ""}
-                                            onChange={(e) => setWallpaperSrc(e.target.value)}
-                                            className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none"
-                                        >
-                                            <option value="" disabled>Select from presets...</option>
-                                            {wallpapers.map((wp: string) => (
-                                                <option key={wp} value={wp}>
-                                                    {wp}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2 border-b border-zinc-800 pb-1">Danger Zone</h3>
-
-
-                                    <button
-                                        onClick={() => location.reload()}
-                                        className="w-full flex items-center justify-start gap-2 p-2 rounded hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors text-xs"
-                                    >
-                                        <RefreshCw size={14} className="text-blue-500" />
-                                        <span>Reboot System (Reload)</span>
-                                    </button>
-
-                                    <button
-                                        onClick={handleClearData}
-                                        className="w-full flex items-center justify-start gap-2 p-2 rounded hover:bg-red-900/20 text-zinc-400 hover:text-red-400 transition-colors text-xs"
-                                    >
-                                        <Trash2 size={14} className="text-red-500" />
-                                        <span>Factory Reset (Clear Data)</span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {!isMaximized && !isMinimized && (
-                    <div
-                        className="absolute bottom-0 right-0 w-8 h-8 cursor-nwse-resize z-[2000] flex items-end justify-end p-1.5"
-                        onMouseDown={startResizing}
-                    >
-                        <div className="w-1.5 h-1.5 bg-zinc-500/50 rounded-sm" />
-                    </div>
-                )}
+                <TabButton
+                    active={activeTab === 'network'}
+                    onClick={() => setActiveTab('network')}
+                    icon={Network}
+                    label="Net"
+                />
+                <TabButton
+                    active={activeTab === 'system'}
+                    onClick={() => setActiveTab('system')}
+                    icon={Monitor}
+                    label="System"
+                />
             </div>
-        </Draggable>
+
+            {/* Main Content Area */}
+            <div className="flex-1 bg-zinc-900 p-4 overflow-y-auto custom-scrollbar">
+                {renderContent()}
+            </div>
+        </WindowFrame>
     );
 }
 

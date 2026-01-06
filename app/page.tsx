@@ -1,47 +1,114 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import { useMapStore } from '@/store/useMapStore';
 import { useSquadStore } from '@/store/useSquadStore';
+import { useUIStore } from '@/store/useUIStore';
 
 import OpsController from '@/components/apps/map/OpsController';
 import MapViewer from '@/components/apps/map/MapViewer';
 import AppIcon from '@/components/common/AppIcon';
 import BootScreen from '@/components/common/BootScreen';
 import AuthOverlay from '@/components/common/AuthOverlay';
-
 import SettingsWindow from '@/components/apps/settings/SettingsWindow';
-import BrowserWindow from '@/components/apps/browser/BrowserWindow'; // [NEW]
+import BrowserWindow from '@/components/apps/browser/BrowserWindow';
 import Wallpaper from '@/components/common/Wallpaper';
-import ConnectionTest from '@/components/common/ConnectionTest';
-import { Globe, ShoppingCart, Target } from 'lucide-react'; // [NEW]
+import AppBar from '@/components/common/AppBar';
+import { Eye, Globe, Settings, ShoppingCart, Target } from 'lucide-react';
 
-// Map 관련 컴포넌트는 SSR 불가 (window 객체 사용)
-const TarkovMap = dynamic(() => import('@/components/apps/map/TarkovMap'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-screen bg-zinc-900 flex flex-col items-center justify-center text-white gap-4">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
-      <p className="text-zinc-400 text-sm">Loading Tarkov Ops...</p>
-    </div>
-  ),
-});
+import { useDesktopGrid } from '@/hooks/useDesktopGrid';
+
+const APP_REGISTRY = [
+  {
+    id: 'map',
+    name: 'Tactical Map',
+    icon: Eye,
+    component: null,
+  },
+  {
+    id: 'settings',
+    name: 'Settings',
+    icon: Settings,
+    component: SettingsWindow,
+  },
+  {
+    id: 'market',
+    name: 'Market',
+    icon: ShoppingCart,
+    component: BrowserWindow,
+    props: { // 별도 props 전달용 객체
+      initialUrl: "https://tarkov-market.com",
+      title: "Tarkov Market",
+      windowId: "market"
+    }
+  },
+  {
+    id: 'tracker',
+    name: 'Tracker',
+    icon: Target,
+    component: BrowserWindow,
+    props: {
+      initialUrl: "https://tarkovtracker.io/",
+      title: "Tarkov Tracker",
+      windowId: "tracker"
+    }
+  }
+];
 
 export default function Home() {
   const [selectedIconId, setSelectedIconId] = useState<string | null>(null);
   const { isMapOpen, toggleMapOpen } = useMapStore();
-
-  // System State
+  const { windowStack, focusWindow, isFullscreen, windowStates, setWindowState, restoreWindow } = useUIStore();
   const [bootComplete, setBootComplete] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isBrowserOpen, setIsBrowserOpen] = useState(false);
-  const [isMarketOpen, setIsMarketOpen] = useState(false);
-  const [isTrackerOpen, setIsTrackerOpen] = useState(false);
+  const [openWindows, setOpenWindows] = useState<Set<string>>(new Set());
+
+  const openApp = (id: string) => {
+    setOpenWindows(prev => new Set(prev).add(id));
+    focusWindow(id);
+  };
+
+  const closeApp = (id: string) => {
+    setOpenWindows(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  // Launch Logic
+  const handleLaunch = (appId: string) => {
+    const isAppOpen = openWindows.has(appId) || (appId === 'map' && isMapOpen);
+
+    // 1. 앱이 아직 안 켜져 있으면 -> 염
+    if (!isAppOpen) {
+      if (appId === 'map') toggleMapOpen();
+      else openApp(appId);
+
+      // 열자마자 초기화 및 포커스
+      restoreWindow(appId);
+      return;
+    }
+
+    // 2. 이미 켜져 있는 상태에서의 동작 제어
+    const appState = windowStates[appId];
+    const isActive = windowStack[windowStack.length - 1] === appId;
+
+    if (appState?.isMinimized) {
+      // A. 최소화되어 있다면 -> 복구 (기존 좌표/크기로)
+      restoreWindow(appId);
+    } else if (!isActive) {
+      // B. 화면엔 있는데 뒤에 있다면 -> 앞으로 가져오기
+      focusWindow(appId);
+    }
+    // else {
+    //   // C. 이미 맨 앞에 활성화되어 있다면 -> 최소화 (Toggle 기능)
+    //   // 원치 않으시면 이 else 블록을 지우시면 됩니다 
+    //   setWindowState(appId, { isMinimized: true });
+    // }
+  };
 
   useEffect(() => {
-    // Check for saved credentials
     const saved = localStorage.getItem('tarkov_ops_auth');
     if (saved) {
       try {
@@ -49,7 +116,7 @@ export default function Home() {
         if (creds.callsign) {
           useSquadStore.setState({ nickname: creds.callsign });
           setIsAuthenticated(true);
-          setBootComplete(true); // Skip boot animation
+          setBootComplete(true);
         }
       } catch (e) { }
     }
@@ -64,111 +131,87 @@ export default function Home() {
     setSelectedIconId(null);
   };
 
+  const desktopIcons = useDesktopGrid(APP_REGISTRY, {
+    startX: 32,  // 좌측 여백
+    startY: 32,  // 상단 여백
+    gapX: 110,   // 가로 간격
+    gapY: 90,   // 세로 간격
+    itemHeight: 80
+  });
+
+  const activeId = windowStack[windowStack.length - 1];
+
+  const runningApps = [
+    ...(isMapOpen ? [{ id: 'map', name: 'Tactical Map', icon: Eye, isActive: activeId === 'map' }] : []),
+    ...APP_REGISTRY.filter(app => openWindows.has(app.id) && app.id !== 'map').map(app => ({
+      id: app.id,
+      name: app.name,
+      icon: app.icon || Globe,
+      isActive: activeId === app.id
+    }))
+  ];
 
   return (
-    <main
-      className="relative w-full h-screen overflow-hidden bg-zinc-900"
-      onClick={handleBackgroundClick}
-    >
+    <main className="flex flex-col w-full h-screen overflow-hidden bg-zinc-900 relative" onClick={handleBackgroundClick}>
       <Wallpaper />
-
-      {/* System Flow */}
       {!bootComplete && <BootScreen onComplete={() => setBootComplete(true)} />}
+      {bootComplete && !isAuthenticated && <AuthOverlay onLogin={handleLogin} />}
 
-      {
-        bootComplete && !isAuthenticated && (
-          <AuthOverlay onLogin={handleLogin} />
-        )
-      }
+      {bootComplete && (
+        <>
+          {!isFullscreen && (
+            <AppBar
+              openApps={runningApps}
+              onAppClick={(id) => handleLaunch(id)}
+            />
+          )}
 
-      {/* Main OS Content (Visible only after auth, or maybe visible behind auth but disabled?) */}
-      {/* Let's show it behind Auth for the "transparency" effect user asked for */}
-      {
-        bootComplete && (
-          <>
-            {/* Only render if launched (isMapOpen) */}
+          {/* Desktop Area */}
+          <div id="desktop-area" className="flex-1 relative overflow-hidden z-10 w-full h-full">
+
             {isMapOpen && <MapViewer name="Tarkov" />}
-
-            {/* 2. 우측 작전 패널 (Independent Window) */}
             <OpsController />
 
-            {/* Settings Window */}
-            <SettingsWindow isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+            {APP_REGISTRY.map(app => {
+              if (app.id === 'map' || !app.component) return null;
+              const Component = app.component;
+              const isOpen = openWindows.has(app.id);
 
-            {/* Browser Window */}
-            <BrowserWindow isOpen={isBrowserOpen} onClose={() => setIsBrowserOpen(false)} windowId="browser" />
+              if (!isOpen) return null;
 
-            {/* Market Window */}
-            <BrowserWindow
-              isOpen={isMarketOpen}
-              onClose={() => setIsMarketOpen(false)}
-              initialUrl="https://tarkov-market.com"
-              title="Tarkov Market"
-              windowId="market"
-            />
+              return (
+                <div key={app.id} style={{ display: 'contents' }}>
+                  <Component
+                    isOpen={isOpen}
+                    onClose={() => closeApp(app.id)}
+                    {...(app.props || {})}
+                  />
+                </div>
+              );
+            })}
 
-            <BrowserWindow
-              isOpen={isTrackerOpen}
-              onClose={() => setIsTrackerOpen(false)}
-              initialUrl="https://tarkovtracker.io/"
-              title="Tarkov Tracker"
-              windowId="tracker"
-            />
+            {desktopIcons.map(app => (
+              <AppIcon
+                key={app.id}
+                id={app.id}
+                name={app.name}
+                iconUrl={undefined}
+                icon={app.icon}
+                initialPosition={app.pos}
+                isSelected={selectedIconId === app.id}
+                onSelect={setSelectedIconId}
+                onLaunch={() => handleLaunch(app.id)}
+              />
+            ))}
 
-            {/* <ConnectionTest /> */}
-
-            {/* 3. 데스크탑 아이콘 (Launcher) */}
-            <AppIcon
-              id="bms"
-              name="BMS"
-              iconUrl="/icons/bms.png"
-              initialPosition={{ x: 40, y: 40 }}
-              isSelected={selectedIconId === 'bms'}
-              onSelect={setSelectedIconId}
-              onLaunch={() => {
-                if (!isMapOpen) toggleMapOpen();
-              }}
-            />
-
-            <AppIcon
-              id="setting"
-              name="Settings"
-              iconUrl="/icons/settings.png"
-              initialPosition={{ x: 40, y: 130 }}
-              isSelected={selectedIconId === 'setting'}
-              onSelect={setSelectedIconId}
-              onLaunch={() => setIsSettingsOpen(true)}
-            />
-
-            <AppIcon
-              id="market"
-              name="Market"
-              icon={ShoppingCart}
-              initialPosition={{ x: 40, y: 220 }}
-              isSelected={selectedIconId === 'market'}
-              onSelect={setSelectedIconId}
-              onLaunch={() => setIsMarketOpen(true)}
-            />
-
-            <AppIcon
-              id="tracker"
-              name="Tracker"
-              icon={Target}
-              initialPosition={{ x: 40, y: 310 }}
-              isSelected={selectedIconId === 'tracker'}
-              onSelect={setSelectedIconId}
-              onLaunch={() => setIsTrackerOpen(true)}
-            />
-
-            {/* 4. 하단 저작권/버전 표시 */}
-            <div className="absolute bottom-4 left-4 z-[500] select-none pointer-events-none opacity-50">
+            <div className="absolute bottom-4 left-4 z-[50] select-none pointer-events-none opacity-50">
               <h1 className="text-2xl font-black text-white/10 tracking-tighter uppercase select-none">
                 Tarkov Operating System by <span className="text-yellow-500/20">Terragroup</span>
               </h1>
             </div>
-          </>
-        )
-      }
-    </main >
+          </div>
+        </>
+      )}
+    </main>
   );
 }
