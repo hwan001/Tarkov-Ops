@@ -49,7 +49,9 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
                 try {
                     const creds = JSON.parse(saved);
                     setLocalApiKey(creds.apiKey || '');
-                } catch (e) { }
+                } catch (e) {
+                    console.error(e);
+                }
             }
         }
     }, [isOpen, nickname]);

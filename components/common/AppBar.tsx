@@ -1,7 +1,7 @@
 'use client';
 
 import { useUIStore } from '@/store/useUIStore';
-import { LayoutGrid, Minus } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 
 interface AppItem {
     id: string;
