@@ -59,7 +59,7 @@ const ConnectionTest = () => {
             </div>
 
             <p className="mt-4 text-[10px] text-gray-500 text-center">
-                * Open this page in TWO tabs. Click "INITIATE" on ONE tab only.
+                * Open this page in TWO tabs. Click &quot;INITIATE&quot; on ONE tab only.
             </p>
         </div>
     );

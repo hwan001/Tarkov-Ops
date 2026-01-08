@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useMap, Polyline, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import { useMapStore } from '@/store/useMapStore';
@@ -8,7 +7,7 @@ interface CoordinateGridProps {
 }
 
 export default function CoordinateGrid({ gridSize = 100 }: CoordinateGridProps) {
-    const map = useMap();
+    useMap(); // Need context but don't need the instance
     const { currentMap, showGrid } = useMapStore();
 
     if (!showGrid) return null;

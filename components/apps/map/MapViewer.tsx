@@ -11,6 +11,7 @@ import WindowFrame from '@/components/common/WindowFrame';
 
 const TarkovMap = dynamic(() => import('./TarkovMap'), { ssr: false });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function MapViewer({ name }: { name: string }) {
     const { currentMap, isMapOpen, toggleMapOpen } = useMapStore();
     const { mapInstance, isFullscreen, toggleFullscreen: setFullscreen } = useUIStore();
@@ -35,6 +36,7 @@ export default function MapViewer({ name }: { name: string }) {
     }, [currentMap]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsMounted(true);
         const handleFsChange = () => setFullscreen(!!document.fullscreenElement);
         document.addEventListener('fullscreenchange', handleFsChange);

@@ -19,7 +19,7 @@ interface SettingState {
     }
     setWallpaperSrc: (src: string) => void;
     addWallpaperSrc: (src: string) => void;
-    setAppIcon: (icons: any[]) => void;
+    setAppIcon: (icons: { src: string; position: { x: number, y: number }; isOpen: boolean }[]) => void;
     setNetwork: (net: Partial<SettingState['network']>) => void;
 }
 

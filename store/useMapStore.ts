@@ -16,7 +16,7 @@ export interface FeatureData {
   id: string;
   type: 'path' | 'marker' | 'spawn' | 'danger';
   subType?: 'boss' | 'item' | 'quest' | 'exit';
-  geometry: any; // points for path, {x, y} for marker
+  geometry: Record<string, unknown> | unknown; // points for path, {x, y} for marker
   creator?: string; // Callsign
   comment?: string;
   color?: string;
@@ -184,7 +184,7 @@ export const useMapStore = create<MapState>((set) => ({
     localStorage.setItem('tarkov-ops-missions', JSON.stringify(updated));
     return { savedMissions: updated };
   }),
-  loadMission: (id) => {
+  loadMission: () => {
     // Logic handled in component or here? Easier here if we pass everything. 
     // Actually store actions usually update state.
     // Let's implement delete first.

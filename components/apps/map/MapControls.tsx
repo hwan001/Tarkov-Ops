@@ -14,7 +14,7 @@ interface MapControlsProps {
 export default function MapControls({ isFullscreen, onToggleFullscreen, className }: MapControlsProps) {
     const { currentMap, currentZoom } = useMapStore();
     const { mapInstance } = useUIStore();
-    const stopPropagation = (e: any) => e.stopPropagation();
+    const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
 
     const handleZoomIn = (e: MouseEvent) => { e.stopPropagation(); mapInstance?.zoomIn(0.4); };
     const handleZoomOut = (e: MouseEvent) => { e.stopPropagation(); mapInstance?.zoomOut(0.4); };

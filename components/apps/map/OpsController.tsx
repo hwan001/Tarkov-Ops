@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Draggable from 'react-draggable';
-import { useMapStore } from '@/store/useMapStore';
+import { useMapStore, SavedMission } from '@/store/useMapStore';
 import {
     Map as MapIcon, ChevronRight, PenTool, ChevronDown,
     Globe, Target, RotateCcw,
@@ -59,8 +59,8 @@ function AddMapForm({ onClose }: { onClose: () => void }) {
             width: type === 'image' ? (Number(width) || 2000) : undefined,
             height: type === 'image' ? (Number(height) || 2000) : undefined,
         };
-        addMap(newMap as any);
-        setCurrentMap(newMap as any);
+        addMap(newMap);
+        setCurrentMap(newMap);
         onClose();
     };
 
@@ -135,7 +135,8 @@ export default function OpsController() {
         startPoint, selectedExtracts, isStartPointLocked, isMapOpen, isOpsControllerOpen,
         // Actions
         toggleExtracts, toggleBosses, toggleGrid, toggleDrawings,
-        toggleEditMode, setCurrentMap,
+        // unused 'toggleEditMode' removed
+        setCurrentMap,
         setStartPoint, toggleExtractSelection, resetMission, toggleStartPointLock, toggleMapOpen,
         toggleOpsController, removeMap
     } = useMapStore();
@@ -154,12 +155,12 @@ export default function OpsController() {
             name: f.comment || 'Custom Exit',
             type: 'Extract',
             subType: 'Custom',
-            x: f.geometry.coordinates[0],
-            y: f.geometry.coordinates[1]
+            x: (f.geometry as { coordinates: number[] }).coordinates[0],
+            y: (f.geometry as { coordinates: number[] }).coordinates[1]
         }));
 
     const extracts = [...customExtracts];
-    const stopPropagation = (e: any) => e.stopPropagation();
+    const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
 
 
     useEffect(() => setIsMounted(true), []);
@@ -181,7 +182,8 @@ export default function OpsController() {
     // Squad Link Local State
     const [isSquadOpen, setIsSquadOpen] = useState(false);
     const [roomId, setRoomId] = useState('');
-    const { isConnected, users, connect, disconnect, roomId: currentRoomId, connectionMode, setConnectionMode } = useSquadStore();
+    // unused 'connectionMode', 'setConnectionMode' removed
+    const { isConnected, users, connect, disconnect, roomId: currentRoomId } = useSquadStore();
 
     // URL Sync
     const searchParams = useSearchParams();
@@ -197,7 +199,7 @@ export default function OpsController() {
             connect(room, `Operator-${Math.floor(Math.random() * 100)}`);
             setIsSquadOpen(true);
         }
-    }, [searchParams]);
+    }, [searchParams, isConnected, connect]); // Added dependencies
 
     // Update URL on connect
     useEffect(() => {
@@ -212,7 +214,7 @@ export default function OpsController() {
                 router.replace(`${pathname}?${params.toString()}`);
             }
         }
-    }, [isConnected, currentRoomId]);
+    }, [isConnected, currentRoomId, pathname, router, searchParams]); // Added dependencies
 
     const handleConnectSquad = () => {
         if (!roomId.trim()) return alert("Enter a Squad Code");
@@ -244,7 +246,7 @@ export default function OpsController() {
         alert("Mission Saved to Log!");
     };
 
-    const handleLoadMission = (mission: any) => { // Type as SavedMission if possible
+    const handleLoadMission = (mission: SavedMission) => { // Type as SavedMission if possible
         if (confirm(`Load Mission: "${mission.title}"? Unsaved progress will be lost.`)) {
             // 1. Restore Map (if custom check)
             if (mission.data.customMapData) {
@@ -406,14 +408,6 @@ export default function OpsController() {
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        // Toggle info: if open, close. if closed, open.
-                                                        // We need state for this. I'll rely on a local state below.
-                                                        // But wait, I can't add state inside map loop easily without breaking things or creating sub-component.
-                                                        // I'll assume 'infoMapId' state exists in parent.
-                                                        // WAIT: I haven't added `infoMapId` state yet! I should add a simple alert/popover for now or add the state in a previous step?
-                                                        // I'll use a simple alert for Info for now, OR better, I should have added the state.
-                                                        // Let's settle for a simple alert for 'Info' to be safe, or I can use the `isMapListOpen` state block to add it?
-                                                        // No, I can add logic to toggle a state.
                                                         alert(`Map Info:\nName: ${map.name}\nSize: ${map.width || '?'}x${map.height || '?'}\nType: ${map.type}\nURL: ${map.imageUrl || map.tileUrl || 'N/A'}`);
                                                     }}
                                                     className="p-1 text-zinc-500 hover:text-cyan-400 bg-zinc-900/80 rounded border border-zinc-700 hover:border-cyan-500/50"
@@ -517,7 +511,7 @@ export default function OpsController() {
                                     {/* List */}
                                     <div className="space-y-1 max-h-40 overflow-y-auto custom-scrollbar">
                                         {useMapStore.getState().savedMissions?.length > 0 ? (
-                                            useMapStore.getState().savedMissions.map((m: any) => (
+                                            useMapStore.getState().savedMissions.map((m: SavedMission) => (
                                                 <div key={m.id} className="group relative flex items-center justify-between p-2 bg-zinc-800/30 rounded border border-transparent hover:border-zinc-700 hover:bg-zinc-800/50 transition-all">
                                                     <div className="flex flex-col overflow-hidden">
                                                         <span className="text-xs font-bold text-zinc-300 truncate">{m.title}</span>

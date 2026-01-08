@@ -1,15 +1,16 @@
-import { ReactNode } from 'react';
+import { ReactNode, MouseEvent } from 'react';
+import { LucideIcon } from 'lucide-react';
 
 interface WindowHeaderProps {
     title: ReactNode;
-    icon?: any; // Lucide Icon component
-    onClose?: (e: any) => void;
-    onMinimize?: (e: any) => void;
-    onMaximize?: (e: any) => void;
+    icon?: LucideIcon;
+    onClose?: (e: MouseEvent) => void;
+    onMinimize?: (e: MouseEvent) => void;
+    onMaximize?: (e: MouseEvent) => void;
     isMinimized?: boolean;
     isMaximized?: boolean;
     className?: string;
-    onDoubleClick?: (e: any) => void;
+    onDoubleClick?: (e: MouseEvent) => void;
 }
 
 export default function WindowHeader({

@@ -6,7 +6,7 @@ import { LayoutGrid } from 'lucide-react';
 interface AppItem {
     id: string;
     name: string;
-    icon: any;
+    icon: React.ElementType;
     isActive: boolean;
 }
 
@@ -19,7 +19,7 @@ export default function AppBar({ openApps, onAppClick }: AppBarProps) {
     const { minimizeAllWindows } = useUIStore();
 
     return (
-        <div className="h-12 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 flex items-center px-4 gap-4 z-[5000] shrink-0">
+        <div className="h-8 bg-zinc-950/30 backdrop-blur-md border-b border-zinc-800/30 flex items-center px-4 gap-4 z-[5000] shrink-0">
             {/* 1. Show Desktop (Minimize All) Button */}
             <button
                 onClick={minimizeAllWindows}

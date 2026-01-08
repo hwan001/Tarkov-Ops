@@ -58,7 +58,7 @@ const APP_REGISTRY = [
 export default function Home() {
   const [selectedIconId, setSelectedIconId] = useState<string | null>(null);
   const { isMapOpen, toggleMapOpen } = useMapStore();
-  const { windowStack, focusWindow, isFullscreen, windowStates, setWindowState, restoreWindow } = useUIStore();
+  const { windowStack, focusWindow, isFullscreen, windowStates, restoreWindow } = useUIStore();
   const [bootComplete, setBootComplete] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [openWindows, setOpenWindows] = useState<Set<string>>(new Set());
@@ -101,11 +101,6 @@ export default function Home() {
       // B. 화면엔 있는데 뒤에 있다면 -> 앞으로 가져오기
       focusWindow(appId);
     }
-    // else {
-    //   // C. 이미 맨 앞에 활성화되어 있다면 -> 최소화 (Toggle 기능)
-    //   // 원치 않으시면 이 else 블록을 지우시면 됩니다 
-    //   setWindowState(appId, { isMinimized: true });
-    // }
   };
 
   useEffect(() => {
@@ -115,10 +110,15 @@ export default function Home() {
         const creds = JSON.parse(saved);
         if (creds.callsign) {
           useSquadStore.setState({ nickname: creds.callsign });
-          setIsAuthenticated(true);
-          setBootComplete(true);
+          // Fix: Wrap in setTimeout to avoid synchronous state update in effect warning
+          setTimeout(() => {
+            setIsAuthenticated(true);
+            setBootComplete(true);
+          }, 0);
         }
-      } catch (e) { }
+      } catch {
+        // catch error ignored
+      }
     }
   }, []);
 

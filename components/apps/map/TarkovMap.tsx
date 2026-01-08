@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { MapContainer, ImageOverlay, TileLayer, useMapEvents, Popup, Marker, useMap, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { useMapStore } from '@/store/useMapStore';
+import { useMapStore, FeatureData } from '@/store/useMapStore';
 import { useUIStore } from '@/store/useUIStore';
 import MapEditor from './MapEditor';
 import CoordinateGrid from '@/components/apps/map/layers/CoordinateGrid';
@@ -132,12 +132,13 @@ export default function TarkovMap() {
 
   // Zustand 스토어 구독
   const {
-    showExtracts, showBosses, currentMap,
+    currentMap,
     startPoint, selectedExtracts,
     updateFeature, removeFeature, showDrawings, mapFeatures
   } = useMapStore();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
   }, []);
 
@@ -202,8 +203,10 @@ export default function TarkovMap() {
           // Helper to reverse coords for Leaflet [lat, lng]
           // GeoJSONPoint: [lng, lat]
 
-          if (feature.type === 'marker' && feature.geometry.type === 'Point') {
-            const [lng, lat] = feature.geometry.coordinates;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (feature.type === 'marker' && (feature.geometry as any).type === 'Point') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const [lng, lat] = (feature.geometry as any).coordinates;
             const isSelected = selectedExtracts.includes(feature.id);
 
             // Determine Icon based on subType
@@ -214,14 +217,14 @@ export default function TarkovMap() {
                 html: `<div style="background-color: #ef4444; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.5);"></div>`,
                 iconSize: [12, 12],
                 iconAnchor: [6, 6]
-              }) as any;
+              }) as unknown as L.Icon;
             } else if (feature.subType === 'quest') {
               markerIcon = L.divIcon({
                 className: 'custom-div-icon',
                 html: `<div style="background-color: #eab308; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.5);"></div>`,
                 iconSize: [12, 12],
                 iconAnchor: [6, 6]
-              }) as any;
+              }) as unknown as L.Icon;
             } else if (feature.subType === 'exit') {
               if (isSelected) {
                 markerIcon = extractIcon; // Selected -> Runner Icon
@@ -232,7 +235,7 @@ export default function TarkovMap() {
                   html: `<div style="background-color: #22c55e; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.5);"></div>`,
                   iconSize: [12, 12],
                   iconAnchor: [6, 6]
-                }) as any;
+                }) as unknown as L.Icon;
               }
             } else if (feature.subType === 'item') {
               markerIcon = L.divIcon({
@@ -240,7 +243,7 @@ export default function TarkovMap() {
                 html: `<div style="background-color: #3b82f6; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.5);"></div>`,
                 iconSize: [12, 12],
                 iconAnchor: [6, 6]
-              }) as any;
+              }) as unknown as L.Icon;
             }
 
             return (
@@ -254,7 +257,8 @@ export default function TarkovMap() {
                     const m = e.target;
                     const pos = m.getLatLng();
                     updateFeature(feature.id, {
-                      geometry: { ...feature.geometry, coordinates: [pos.lng, pos.lat] }
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      geometry: { ...(feature.geometry as any), coordinates: [pos.lng, pos.lat] }
                     });
                   }
                 }}
@@ -266,7 +270,7 @@ export default function TarkovMap() {
                       {['boss', 'item', 'quest', 'exit'].map(t => (
                         <button
                           key={t}
-                          onClick={() => updateFeature(feature.id, { subType: t as any })}
+                          onClick={() => updateFeature(feature.id, { subType: t as FeatureData['subType'] })}
                           className={`px-2 py-1 text-[10px] uppercase font-bold rounded border ${feature.subType === t
                             ? (t === 'boss' ? 'bg-red-600 border-red-500'
                               : t === 'quest' ? 'bg-yellow-600 border-yellow-500'
@@ -303,12 +307,14 @@ export default function TarkovMap() {
             );
           }
 
-          if ((feature.type === 'path' || feature.type === 'danger') && (feature.geometry.type === 'LineString' || feature.geometry.type === 'Polygon')) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((feature.type === 'path' || feature.type === 'danger') && ((feature.geometry as any).type === 'LineString' || (feature.geometry as any).type === 'Polygon')) {
             // For Paths/Polygons, react-leaflet <GeoJSON> is robust
             return (
               <GeoJSON
                 key={feature.id}
-                data={feature.geometry}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                data={feature.geometry as any}
                 style={() => ({
                   color: feature.type === 'danger' ? '#f59e0b' : '#fbbf24', // Orange vs Yellow
                   weight: 3,

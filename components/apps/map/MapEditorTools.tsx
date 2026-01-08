@@ -2,6 +2,7 @@
 
 import { useMapStore } from '@/store/useMapStore';
 import { PenTool, Save, Upload, Route, MapPin, AlertTriangle, Hand, Trash2 } from 'lucide-react';
+import React from 'react';
 
 interface MapEditorToolsProps {
     className?: string;
@@ -13,7 +14,7 @@ export default function MapEditorTools({ className }: MapEditorToolsProps) {
         setDrawType, setFeatures, setCurrentMap, clearFeatures, toggleEditMode
     } = useMapStore();
 
-    const stopPropagation = (e: any) => e.stopPropagation();
+    const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
 
     // Import/Export Logic
     const handleExportJson = () => {
@@ -31,6 +32,7 @@ export default function MapEditorTools({ className }: MapEditorToolsProps) {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'application/json';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         input.onchange = (e: any) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -40,12 +42,15 @@ export default function MapEditorTools({ className }: MapEditorToolsProps) {
                     const json = JSON.parse(event.target?.result as string);
                     if (json.mapId && json.features) {
                         if (json.mapId !== currentMap.id) {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const foundMap = useMapStore.getState().maps.find((m: any) => m.id === json.mapId);
                             if (foundMap) setCurrentMap(foundMap);
                         }
                         setFeatures(json.features);
                     }
-                } catch (err) { alert('Invalid JSON'); }
+                } catch {
+                    alert('Invalid JSON');
+                }
             };
             reader.readAsText(file);
         };

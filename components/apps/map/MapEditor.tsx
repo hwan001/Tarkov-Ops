@@ -9,12 +9,13 @@ import { useMapStore } from '@/store/useMapStore';
 
 export default function MapEditor() {
     const map = useMap();
-    const { isEditMode, drawType, mapFeatures, addFeature, updateFeature, removeFeature, showDrawings, currentMap } = useMapStore();
+    // unused variables removed (mapFeatures, updateFeature, removeFeature, showDrawings)
+    const { isEditMode, drawType, addFeature, currentMap } = useMapStore();
     const featureLayerRef = useRef<L.LayerGroup | null>(null);
 
     // Fix Leaflet's default icon path issues in Next.js
     useEffect(() => {
-        // @ts-ignore
+        // @ts-expect-error -- Leaflet prototype manipulation needed for Next.js image loading
         delete L.Icon.Default.prototype._getIconUrl;
         L.Icon.Default.mergeOptions({
             iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
@@ -87,7 +88,8 @@ export default function MapEditor() {
     useEffect(() => {
         if (!map) return;
 
-        const handleCreate = (e: any) => {
+        // Typed event handler
+        const handleCreate = (e: { layer: L.Layer }) => {
             const layer = e.layer;
 
             // 0. Boundary Check (Create) - Only for Image Maps
@@ -96,13 +98,17 @@ export default function MapEditor() {
                 const mapH = currentMap.height || 2000;
                 let boundsValid = true;
 
+                // @ts-expect-error -- Leaflet types check
                 if (layer.getBounds) {
+                    // @ts-expect-error -- Leaflet types check
                     const b = layer.getBounds();
                     // Strict check for Image Maps (Simple CRS)
                     if (b.getSouth() < 0 || b.getNorth() > mapH || b.getWest() < 0 || b.getEast() > mapW) {
                         boundsValid = false;
                     }
+                    // @ts-expect-error -- Leaflet types check
                 } else if (layer.getLatLng) {
+                    // @ts-expect-error -- Leaflet types check
                     const ll = layer.getLatLng();
                     if (ll.lat < 0 || ll.lat > mapH || ll.lng < 0 || ll.lng > mapW) {
                         boundsValid = false;
@@ -117,11 +123,13 @@ export default function MapEditor() {
             }
 
             // 1. GeoJSON 변환 및 스토어 저장
+            // @ts-expect-error -- toGeoJSON exists on Layer
             const geoJson = layer.toGeoJSON();
             const id = crypto.randomUUID();
 
             addFeature({
                 id,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 type: drawType as any,
                 geometry: geoJson.geometry,
                 creator: 'Operator', // TODO: Get from SquadStore

@@ -26,7 +26,7 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
     const network = useSettingStore((state) => state.network);
     const setNetwork = useSettingStore((state) => state.setNetwork);
 
-    const updateNetwork = (updates: any) => {
+    const updateNetwork = (updates: Partial<typeof network>) => {
         setNetwork(updates);
     };
 
@@ -61,7 +61,7 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
 
         // Update LocalStorage
         const saved = localStorage.getItem('tarkov_ops_auth');
-        let creds = saved ? JSON.parse(saved) : {};
+        const creds = saved ? JSON.parse(saved) : {};
         creds.callsign = localNick;
         creds.apiKey = localApiKey;
         localStorage.setItem('tarkov_ops_auth', JSON.stringify(creds));
@@ -121,8 +121,6 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
 
                 setTestMessage(`Probing ${urls.length} signaling servers...`);
 
-                let successCount = 0;
-
                 // Try reaching at least one
                 const results = await Promise.allSettled(urls.map(url => {
                     return new Promise<void>((resolve, reject) => {
@@ -152,10 +150,10 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
                     throw new Error('Unreachable');
                 }
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
             setTestStatus('error');
-            setTestMessage(`Connection Failed: ${err.message || 'Unknown Error'}`);
+            setTestMessage(`Connection Failed: ${(err as Error).message || 'Unknown Error'}`);
         }
     };
 
@@ -172,7 +170,7 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
                                 type="text"
                                 value={localNick}
                                 onChange={(e) => setLocalNick(e.target.value)}
-                                className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none"
+                                className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-cyan-500 outline-none"
                             />
                         </div>
 
@@ -182,7 +180,7 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
                                 type="password"
                                 value={localApiKey}
                                 onChange={(e) => setLocalApiKey(e.target.value)}
-                                className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none font-mono"
+                                className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-cyan-500 outline-none font-mono"
                             />
                         </div>
 
@@ -200,14 +198,14 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
                         <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2 border-b border-zinc-800 pb-1">Connection Mode</h3>
 
                         <div className="space-y-2">
-                            <label className={`flex items-center justify-between p-2 rounded border cursor-pointer transition-all ${network.connectionMode === 'p2p' ? 'bg-emerald-900/20 border-emerald-500' : 'bg-zinc-950 border-zinc-800 hover:bg-zinc-800'}`}>
+                            <label className={`flex items-center justify-between p-2 rounded border cursor-pointer transition-all ${network.connectionMode === 'p2p' ? 'bg-cyan-900/20 border-cyan-500' : 'bg-zinc-950 border-zinc-800 hover:bg-zinc-800'}`}>
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="radio"
                                         name="netmode"
                                         checked={network.connectionMode === 'p2p'}
                                         onChange={() => updateNetwork({ connectionMode: 'p2p' })}
-                                        className="accent-emerald-500"
+                                        className="accent-cyan-500"
                                     />
                                     <div className="text-xs">
                                         <div className="font-bold text-zinc-200">P2P (Serverless)</div>
@@ -243,7 +241,7 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
                                     <textarea
                                         value={network.p2pSignalingUrls?.join('\n') || ''}
                                         onChange={(e) => updateNetwork({ p2pSignalingUrls: e.target.value.split('\n').filter(l => l.trim()) })}
-                                        className="w-full h-20 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none font-mono"
+                                        className="w-full h-20 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-cyan-500 outline-none font-mono"
                                         placeholder="wss://y-webrtc-signaling-eu.herokuapp.com"
                                     />
                                 </div>
@@ -252,7 +250,7 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
                                     <textarea
                                         value={network.p2pIceServers?.join('\n') || ''}
                                         onChange={(e) => updateNetwork({ p2pIceServers: e.target.value.split('\n').filter(l => l.trim()) })}
-                                        className="w-full h-20 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none font-mono"
+                                        className="w-full h-20 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-cyan-500 outline-none font-mono"
                                         placeholder="stun:stun.l.google.com:19302"
                                     />
                                 </div>
@@ -301,7 +299,7 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
                                     value={wallpaperSrc}
                                     onChange={(e) => setWallpaperSrc(e.target.value)}
                                     placeholder="Enter image URL..."
-                                    className="flex-1 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none"
+                                    className="flex-1 bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-cyan-500 outline-none"
                                 />
                                 <button
                                     onClick={() => wallpaperSrc && addWallpaperSrc(wallpaperSrc)}
@@ -313,7 +311,7 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
                             <select
                                 value={wallpapers.includes(wallpaperSrc) ? wallpaperSrc : ""}
                                 onChange={(e) => setWallpaperSrc(e.target.value)}
-                                className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-emerald-500 outline-none"
+                                className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-cyan-500 outline-none"
                             >
                                 <option value="" disabled>Select from presets...</option>
                                 {wallpapers.map((wp: string) => (
@@ -390,11 +388,18 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
     );
 }
 
-function TabButton({ active, onClick, icon: Icon, label }: any) {
+interface TabButtonProps {
+    active: boolean;
+    onClick: () => void;
+    icon: React.ElementType;
+    label: string;
+}
+
+function TabButton({ active, onClick, icon: Icon, label }: TabButtonProps) {
     return (
         <button
             onClick={onClick}
-            className={`w-full flex flex-col items-center justify-center p-2 gap-1 transition-colors ${active ? 'text-emerald-500 bg-zinc-900' : 'text-zinc-600 hover:text-zinc-400 hover:bg-zinc-900/50'}`}
+            className={`w-full flex flex-col items-center justify-center p-2 gap-1 transition-colors ${active ? 'text-cyan-500 bg-zinc-900' : 'text-zinc-600 hover:text-zinc-400 hover:bg-zinc-900/50'}`}
         >
             <Icon size={16} />
             <span className="text-[9px] font-bold uppercase">{label}</span>

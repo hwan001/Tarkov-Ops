@@ -22,9 +22,11 @@ export default function AuthOverlay({ onLogin }: AuthOverlayProps) {
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setApiKey(parsed.apiKey);
                 setCallsign(parsed.callsign);
-            } catch (e) { /* ignore */ }
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (_) { /* ignore */ }
         }
     }, []);
 
@@ -50,11 +52,12 @@ export default function AuthOverlay({ onLogin }: AuthOverlayProps) {
             <div className="relative w-full max-w-md bg-zinc-900/90 border border-zinc-700 rounded-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
                 {/* Header */}
                 <div className="bg-zinc-950/50 p-6 border-b border-zinc-800 flex items-center gap-3">
-                    <div className="p-2 bg-emerald-900/20 rounded border border-emerald-900/50">
-                        <Terminal size={24} className="text-emerald-500" />
+                    <div className="p-2 bg-cyan-900/20 rounded border border-cyan-900/50">
+                        <Terminal size={24} className="text-cyan-500" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-bold text-emerald-500 tracking-wider">ACCESS CONTROL</h2>
+                        <h2 className="text-lg font-bold text-cyan-700 tracking-wider">Terra Group secure shell</h2>
+                        {/* <h2 className="text-lg font-bold text-emerald-700 tracking-wider">Access control</h2> */}
                         <p className="text-xs text-zinc-500 font-mono">AUTHORIZED PERSONNEL ONLY</p>
                     </div>
                 </div>
@@ -84,7 +87,7 @@ export default function AuthOverlay({ onLogin }: AuthOverlayProps) {
                             type="password"
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
-                            className="w-full bg-zinc-950/50 border border-zinc-700 rounded p-2 text-sm text-white focus:border-emerald-500 outline-none transition-colors font-mono placeholder:text-zinc-700"
+                            className="w-full bg-zinc-950/50 border border-zinc-700 rounded p-2 text-sm text-white focus:border-cyan-500 outline-none transition-colors font-mono placeholder:text-zinc-700"
                             placeholder="••••••••••••••"
                         />
                         <p className="text-[9px] text-zinc-600 italic text-right">* Internal access only</p>
@@ -94,7 +97,7 @@ export default function AuthOverlay({ onLogin }: AuthOverlayProps) {
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`w-full py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-wait' : ''}`}
+                            className={`w-full py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold rounded shadow-lg shadow-cyan-900/20 transition-all flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-wait' : ''}`}
                         >
                             {loading ? (
                                 <>

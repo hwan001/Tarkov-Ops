@@ -18,14 +18,25 @@ export const useLocalConnection = () => {
 
     const addLog = (msg: string) => setLogs(prev => [...prev, `[SYS] ${msg}`]);
 
+    // 2. 데이터 채널 설정 (메시지 주고받기)
+    const setupDataChannel = useCallback((dataChannel: RTCDataChannel) => {
+        dc.current = dataChannel;
+        setStatus('CONNECTED');
+        addLog('Data Link Established.');
+
+        dataChannel.onopen = () => addLog('Channel Open');
+        dataChannel.onmessage = (e) => addLog(`RX: ${e.data}`);
+    }, []);
+
     // 1. 초기화 및 리스너 설정
     useEffect(() => {
         pc.current = new RTCPeerConnection(ICE_SERVERS);
+        const broadcastChannel = channel.current;
 
         // ICE Candidate(네트워크 경로) 찾으면 옆 탭으로 전송
         pc.current.onicecandidate = (event) => {
             if (event.candidate) {
-                channel.current.postMessage({ type: 'candidate', payload: event.candidate });
+                broadcastChannel.postMessage({ type: 'candidate', payload: event.candidate });
             }
         };
 
@@ -36,7 +47,7 @@ export const useLocalConnection = () => {
         };
 
         // 옆 탭에서 오는 메시지 수신 (Signaling Server 역할)
-        channel.current.onmessage = async (event) => {
+        broadcastChannel.onmessage = async (event) => {
             const { type, payload } = event.data;
             if (!pc.current) return;
 
@@ -46,7 +57,7 @@ export const useLocalConnection = () => {
                     await pc.current.setRemoteDescription(new RTCSessionDescription(payload));
                     const answer = await pc.current.createAnswer();
                     await pc.current.setLocalDescription(answer);
-                    channel.current.postMessage({ type: 'answer', payload: answer });
+                    broadcastChannel.postMessage({ type: 'answer', payload: answer });
                 } 
                 else if (type === 'answer') {
                     addLog('Answer received. Connection establishing...');
@@ -62,19 +73,9 @@ export const useLocalConnection = () => {
 
         return () => {
             pc.current?.close();
-            channel.current.close();
+            broadcastChannel.close();
         };
-    }, []);
-
-    // 2. 데이터 채널 설정 (메시지 주고받기)
-    const setupDataChannel = (dataChannel: RTCDataChannel) => {
-        dc.current = dataChannel;
-        setStatus('CONNECTED');
-        addLog('Data Link Established.');
-
-        dataChannel.onopen = () => addLog('Channel Open');
-        dataChannel.onmessage = (e) => addLog(`RX: ${e.data}`);
-    };
+    }, [setupDataChannel]);
 
     // 3. 연결 시작 (호스트가 호출)
     const startConnection = async () => {

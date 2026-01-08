@@ -21,6 +21,7 @@ interface SquadState {
     nickname: string;
     users: UserAwareness[];
     ydoc: Y.Doc | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     provider: any | null;
 
     // Actions
@@ -57,6 +58,7 @@ export const useSquadStore = create<SquadState>((set, get) => ({
         set({ connectionMode });
 
         const ydoc = new Y.Doc();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let provider: any;
 
         if (connectionMode === 'server') {
@@ -99,7 +101,10 @@ export const useSquadStore = create<SquadState>((set, get) => ({
              const userList: UserAwareness[] = [];
              
              for (const [key, value] of states) {
-                 userList.push({ clientId: Number(key), user: value as any });
+                 userList.push({ 
+                     clientId: Number(key), 
+                     user: value as { name: string; color: string; point: { x: number; y: number } | null } 
+                 });
              }
              
             set({ users: userList });

@@ -25,10 +25,14 @@ export default function AppIcon({
     const { isMapOpen } = useMapStore(); // Only read status
     const [isMounted, setIsMounted] = useState(false);
 
-    useEffect(() => setIsMounted(true), []);
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsMounted(true);
+    }, []);
 
     if (!isMounted) return null;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleMouseDown = (e: any) => {
         // e might be MouseEvent or TouchEvent from Draggable
         e.stopPropagation?.(); // Safely call stopPropagation

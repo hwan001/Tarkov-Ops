@@ -14,8 +14,8 @@ export default function SquadManager() {
     const { ydoc, isConnected } = useSquadStore();
     const {
         mapFeatures, setFeatures,
-        startPoint, setStartPoint,
-        selectedExtracts, toggleExtractSelection
+        startPoint,
+        selectedExtracts
     } = useMapStore();
 
     // To prevent loop: Local -> Yjs -> Local -> Yjs
@@ -30,7 +30,7 @@ export default function SquadManager() {
         // Observer: Remote -> Local
         const observer = () => {
             isRemoteUpdate.current = true;
-            // @ts-ignore
+            // @ts-expect-error -- Yjs array types differ from local state
             setFeatures(yFeatures.toArray());
             isRemoteUpdate.current = false;
         };
@@ -38,7 +38,7 @@ export default function SquadManager() {
         yFeatures.observe(observer);
 
         return () => yFeatures.unobserve(observer);
-    }, [ydoc, isConnected]);
+    }, [ydoc, isConnected, setFeatures]);
 
     // Listener: Local -> Remote
     useEffect(() => {
@@ -63,16 +63,16 @@ export default function SquadManager() {
         const yMission = ydoc.getMap('mission');
 
         // Observer: Remote -> Local
-        const observer = (event: Y.YMapEvent<any>) => {
+        const observer = (event: Y.YMapEvent<unknown>) => {
             isRemoteUpdate.current = true;
             if (event.keysChanged.has('startPoint')) {
                 const sp = yMission.get('startPoint');
-                // @ts-ignore
+                // @ts-expect-error -- useMapStore typing is strict
                 useMapStore.setState({ startPoint: sp });
             }
             if (event.keysChanged.has('selectedExtracts')) {
                 const ex = yMission.get('selectedExtracts');
-                // @ts-ignore
+                // @ts-expect-error -- useMapStore typing is strict
                 useMapStore.setState({ selectedExtracts: ex });
             }
             isRemoteUpdate.current = false;
