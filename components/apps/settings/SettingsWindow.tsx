@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Settings, User, Network, Monitor, RefreshCw, Trash2, Save } from 'lucide-react';
 import { useSquadStore } from '@/store/useSquadStore';
 import { useSettingStore } from '@/store/useSettingStore';
+import { useAuthStore } from '@/store/useAuthStore'; // AuthStore 추가
 import StatusIndicator, { StatusType } from '@/components/common/StatusIndicator';
 import WindowFrame from '@/components/common/WindowFrame';
 
@@ -17,6 +18,13 @@ type TabType = 'general' | 'network' | 'system';
 export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps) {
     const [activeTab, setActiveTab] = useState<TabType>('general');
 
+    // 1. Auth Store Hooks (API Key 및 인증 정보 관리)
+    const authApiKey = useAuthStore((state) => state.apiKey);
+    const authCallsign = useAuthStore((state) => state.callsign);
+    const setAuth = useAuthStore((state) => state.setAuth);
+    const logout = useAuthStore((state) => state.logout);
+
+    // Settings Store Hooks
     const wallpaperSrc = useSettingStore((state) => state.wallpaperSrc);
     const wallpapers = useSettingStore((state) => state.wallpapers);
     const setWallpaperSrc = useSettingStore((state) => state.setWallpaperSrc);
@@ -30,53 +38,48 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
         setNetwork(updates);
     };
 
-    // Store State
+    // Squad Store Hooks (UI 표시용 닉네임)
     const { nickname } = useSquadStore();
 
     // Local State for forms
-    const [localNick, setLocalNick] = useState(nickname);
+    const [localNick, setLocalNick] = useState('');
     const [localApiKey, setLocalApiKey] = useState('');
 
     // Testing State
     const [testStatus, setTestStatus] = useState<StatusType>('idle');
     const [testMessage, setTestMessage] = useState('');
 
+    // 2. 초기화 로직 수정: localStorage 직접 파싱 대신 Store 값 사용
     useEffect(() => {
         if (isOpen) {
-            setLocalNick(nickname);
-            const saved = localStorage.getItem('tarkov_ops_auth');
-            if (saved) {
-                try {
-                    const creds = JSON.parse(saved);
-                    setLocalApiKey(creds.apiKey || '');
-                } catch (e) {
-                    console.error(e);
-                }
-            }
+            // AuthStore와 SquadStore의 값을 로컬 상태로 동기화
+            setLocalNick(authCallsign || nickname || '');
+            setLocalApiKey(authApiKey || '');
         }
-    }, [isOpen, nickname]);
+    }, [isOpen, authApiKey, authCallsign, nickname]);
 
+    // 3. 저장 로직 수정: Store 액션 호출
     const handleSaveGeneral = () => {
+        // Squad Store 업데이트 (기존 로직 유지)
         useSquadStore.setState({ nickname: localNick });
 
-        // Update LocalStorage
-        const saved = localStorage.getItem('tarkov_ops_auth');
-        const creds = saved ? JSON.parse(saved) : {};
-        creds.callsign = localNick;
-        creds.apiKey = localApiKey;
-        localStorage.setItem('tarkov_ops_auth', JSON.stringify(creds));
+        // Auth Store 업데이트 (여기서 Persist 미들웨어가 자동으로 저장소에 저장함)
+        setAuth(localApiKey, localNick);
 
-        alert('Settings Saved');
+        alert('Settings Saved & Profile Updated');
     };
 
     const handleClearData = () => {
         if (confirm('CAUTION: This will wipe all local data including map drawings and authentication. Continue?')) {
+            // Auth Store 로그아웃 처리
+            logout();
+            // 로컬 스토리지 전체 삭제
             localStorage.clear();
             location.reload();
         }
     };
 
-    // Test Connection Logic
+    // Test Connection Logic (변경 없음)
     const handleTestConnection = async () => {
         setTestStatus('loading');
         setTestMessage('Initializing connection probe...');
@@ -114,14 +117,12 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
 
             } else {
                 // P2P Mode check
-                // Check if we can reach signaling servers
                 const urls = network.p2pSignalingUrls?.length
                     ? network.p2pSignalingUrls
                     : ['wss://y-webrtc-signaling-eu.herokuapp.com', 'wss://y-webrtc-signaling-us.herokuapp.com'];
 
                 setTestMessage(`Probing ${urls.length} signaling servers...`);
 
-                // Try reaching at least one
                 const results = await Promise.allSettled(urls.map(url => {
                     return new Promise<void>((resolve, reject) => {
                         try {
@@ -181,6 +182,7 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
                                 value={localApiKey}
                                 onChange={(e) => setLocalApiKey(e.target.value)}
                                 className="w-full bg-zinc-950 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:border-cyan-500 outline-none font-mono"
+                                placeholder="TarkovTracker API Token"
                             />
                         </div>
 

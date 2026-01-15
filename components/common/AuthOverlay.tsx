@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Shield, Key, Terminal } from 'lucide-react';
+import { useState } from 'react';
+import { Shield, Key, Terminal, AlertCircle } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface AuthCredentials {
     apiKey: string;
@@ -9,38 +10,61 @@ interface AuthCredentials {
 }
 
 interface AuthOverlayProps {
-    onLogin: (creds: AuthCredentials) => void;
+    onLogin?: (creds: AuthCredentials) => void;
 }
 
 export default function AuthOverlay({ onLogin }: AuthOverlayProps) {
-    const [apiKey, setApiKey] = useState('');
-    const [callsign, setCallsign] = useState('');
+    const [inputApiKey, setInputApiKey] = useState('');
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const saved = localStorage.getItem('tarkov_ops_auth');
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                // eslint-disable-next-line react-hooks/set-state-in-effect
-                setApiKey(parsed.apiKey);
-                setCallsign(parsed.callsign);
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            } catch (_) { /* ignore */ }
+    const setAuth = useAuthStore((state) => state.setAuth);
+    const checkAuth = async (token: string): Promise<{ valid: boolean; username?: string; error?: string }> => {
+        try {
+            const response = await fetch('/tarkov-api/progress', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token.trim(),
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    return { valid: false, error: 'ACCESS DENIED: Invalid API Key' };
+                }
+                return { valid: false, error: `CONNECTION FAILED: HTTP ${response.status}` };
+            }
+
+            const data = await response.json();
+            const fetchedUsername = data.username || data.user?.name || 'Operator';
+
+            return { valid: true, username: fetchedUsername };
+        } catch (err) {
+            return { valid: false, error: 'NETWORK ERROR: Uplink Unstable' };
         }
-    }, []);
+    };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
 
-        // Fake verification delay
-        setTimeout(() => {
-            const creds = { apiKey, callsign: callsign || 'Operator' };
-            localStorage.setItem('tarkov_ops_auth', JSON.stringify(creds));
-            onLogin(creds);
+        const authResult = await checkAuth(inputApiKey);
+
+        if (authResult.valid && authResult.username) {
+            setAuth(inputApiKey, authResult.username);
+
+            setTimeout(() => {
+                if (onLogin) {
+                    onLogin({ apiKey: inputApiKey, callsign: authResult.username! });
+                }
+                setLoading(false);
+            }, 500);
+        } else {
+            setError(authResult.error || 'Unknown Error');
             setLoading(false);
-        }, 800);
+        }
     };
 
     return (
@@ -57,7 +81,6 @@ export default function AuthOverlay({ onLogin }: AuthOverlayProps) {
                     </div>
                     <div>
                         <h2 className="text-lg font-bold text-cyan-700 tracking-wider">Terra Group secure shell</h2>
-                        {/* <h2 className="text-lg font-bold text-emerald-700 tracking-wider">Access control</h2> */}
                         <p className="text-xs text-zinc-500 font-mono">AUTHORIZED PERSONNEL ONLY</p>
                     </div>
                 </div>
@@ -65,44 +88,42 @@ export default function AuthOverlay({ onLogin }: AuthOverlayProps) {
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
 
-                    {/* <div className="space-y-1">
-                        <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                            <User size={10} /> Operator Callsign
-                        </label>
-                        <input
-                            type="text"
-                            value={callsign}
-                            onChange={(e) => setCallsign(e.target.value)}
-                            className="w-full bg-zinc-950/50 border border-zinc-700 rounded p-2 text-sm text-white focus:border-emerald-500 outline-none transition-colors font-mono placeholder:text-zinc-700"
-                            placeholder="OPERATOR_NAME"
-                            autoFocus
-                        />
-                    </div> */}
-
                     <div className="space-y-1">
                         <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
                             <Key size={10} /> Secure API Key
                         </label>
                         <input
                             type="password"
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            className="w-full bg-zinc-950/50 border border-zinc-700 rounded p-2 text-sm text-white focus:border-cyan-500 outline-none transition-colors font-mono placeholder:text-zinc-700"
-                            placeholder="••••••••••••••"
+                            value={inputApiKey}
+                            onChange={(e) => {
+                                setInputApiKey(e.target.value);
+                                if (error) setError(null);
+                            }}
+                            className={`w-full bg-zinc-950/50 border rounded p-2 text-sm text-white outline-none transition-colors font-mono placeholder:text-zinc-700 ${error ? 'border-red-500 focus:border-red-500' : 'border-zinc-700 focus:border-cyan-500'
+                                }`}
+                            placeholder="Paste your TarkovTracker API Token"
+                            autoFocus
                         />
-                        <p className="text-[9px] text-zinc-600 italic text-right">* Internal access only</p>
+                        <div className="flex justify-between items-start">
+                            <p className="text-[9px] text-zinc-600 italic">* Settings {'>'} API Tokens {'>'} Create Token</p>
+                            {error && (
+                                <p className="text-[10px] text-red-400 font-bold flex items-center gap-1 animate-pulse">
+                                    <AlertCircle size={10} /> {error}
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                     <div className="pt-2">
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || !inputApiKey}
                             className={`w-full py-2 bg-cyan-700 hover:bg-cyan-600 text-white font-bold rounded shadow-lg shadow-cyan-900/20 transition-all flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-wait' : ''}`}
                         >
                             {loading ? (
                                 <>
                                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    <span>VERIFYING...</span>
+                                    <span>ESTABLISHING LINK...</span>
                                 </>
                             ) : (
                                 <>

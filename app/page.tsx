@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useMapStore } from '@/store/useMapStore';
-import { useSquadStore } from '@/store/useSquadStore';
 import { useUIStore } from '@/store/useUIStore';
+import { useAuthStore } from '@/store/useAuthStore'; // Auth Store 추가
 
 import OpsController from '@/components/apps/map/OpsController';
 import MapViewer from '@/components/apps/map/MapViewer';
@@ -36,7 +36,7 @@ const APP_REGISTRY = [
     name: 'Market',
     icon: ShoppingCart,
     component: BrowserWindow,
-    props: { // 별도 props 전달용 객체
+    props: {
       initialUrl: "https://tarkov-market.com",
       title: "Tarkov Market",
       windowId: "market"
@@ -57,11 +57,25 @@ const APP_REGISTRY = [
 
 export default function Home() {
   const [selectedIconId, setSelectedIconId] = useState<string | null>(null);
+
+  // Stores
   const { isMapOpen, toggleMapOpen } = useMapStore();
   const { windowStack, focusWindow, isFullscreen, windowStates, restoreWindow } = useUIStore();
+
+  // Auth Store에서 상태 가져오기 (localStorage 로직 대체)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  // bootComplete는 UI 흐름 제어용이므로 로컬 유지하되, 인증된 상태면 true로 시작
   const [bootComplete, setBootComplete] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [openWindows, setOpenWindows] = useState<Set<string>>(new Set());
+
+  // 마운트 시 인증 상태 체크하여 부팅 화면 스킵 여부 결정
+  useEffect(() => {
+    // 이미 인증되어 있다면 부팅 화면을 보여주지 않고 바로 진입
+    if (isAuthenticated) {
+      setBootComplete(true);
+    }
+  }, [isAuthenticated]);
 
   const openApp = (id: string) => {
     setOpenWindows(prev => new Set(prev).add(id));
@@ -76,66 +90,42 @@ export default function Home() {
     });
   };
 
-  // Launch Logic
   const handleLaunch = (appId: string) => {
     const isAppOpen = openWindows.has(appId) || (appId === 'map' && isMapOpen);
 
-    // 1. 앱이 아직 안 켜져 있으면 -> 염
     if (!isAppOpen) {
       if (appId === 'map') toggleMapOpen();
       else openApp(appId);
 
-      // 열자마자 초기화 및 포커스
       restoreWindow(appId);
       return;
     }
 
-    // 2. 이미 켜져 있는 상태에서의 동작 제어
     const appState = windowStates[appId];
-    const isActive = windowStack[windowStack.length - 1] === appId;
+    const activeId = windowStack[windowStack.length - 1];
 
     if (appState?.isMinimized) {
-      // A. 최소화되어 있다면 -> 복구 (기존 좌표/크기로)
       restoreWindow(appId);
-    } else if (!isActive) {
-      // B. 화면엔 있는데 뒤에 있다면 -> 앞으로 가져오기
+    } else if (activeId !== appId) {
       focusWindow(appId);
     }
-  };
-
-  useEffect(() => {
-    const saved = localStorage.getItem('tarkov_ops_auth');
-    if (saved) {
-      try {
-        const creds = JSON.parse(saved);
-        if (creds.callsign) {
-          useSquadStore.setState({ nickname: creds.callsign });
-          // Fix: Wrap in setTimeout to avoid synchronous state update in effect warning
-          setTimeout(() => {
-            setIsAuthenticated(true);
-            setBootComplete(true);
-          }, 0);
-        }
-      } catch {
-        // catch error ignored
-      }
-    }
-  }, []);
-
-  const handleLogin = (creds: { apiKey: string; callsign: string }) => {
-    useSquadStore.setState({ nickname: creds.callsign });
-    setIsAuthenticated(true);
   };
 
   const handleBackgroundClick = () => {
     setSelectedIconId(null);
   };
 
+  // AuthOverlay에서 로그인이 완료되면 Store가 업데이트되어 isAuthenticated가 true가 됨
+  // 따라서 별도의 핸들러 로직이 필요 없음 (빈 함수 전달)
+  const handleLoginSuccess = () => {
+    // 필요 시 추가 로직 (예: 환영 사운드 재생 등)
+  };
+
   const desktopIcons = useDesktopGrid(APP_REGISTRY, {
-    startX: 32,  // 좌측 여백
-    startY: 32,  // 상단 여백
-    gapX: 110,   // 가로 간격
-    gapY: 90,   // 세로 간격
+    startX: 32,
+    startY: 32,
+    gapX: 110,
+    gapY: 90,
     itemHeight: 80
   });
 
@@ -151,13 +141,25 @@ export default function Home() {
     }))
   ];
 
+  // 렌더링 로직:
+  // 1. 미인증 && 부팅전 -> BootScreen
+  // 2. 미인증 && 부팅완료 -> AuthOverlay
+  // 3. 인증됨 -> Desktop (BootScreen, AuthOverlay 무시)
+
   return (
     <main className="flex flex-col w-full h-screen overflow-hidden bg-zinc-900 relative" onClick={handleBackgroundClick}>
       <Wallpaper />
-      {!bootComplete && <BootScreen onComplete={() => setBootComplete(true)} />}
-      {bootComplete && !isAuthenticated && <AuthOverlay onLogin={handleLogin} />}
 
-      {bootComplete && (
+      {/* 인증되지 않았을 때만 부팅/로그인 화면 표시 */}
+      {!isAuthenticated && (
+        <>
+          {!bootComplete && <BootScreen onComplete={() => setBootComplete(true)} />}
+          {bootComplete && <AuthOverlay onLogin={handleLoginSuccess} />}
+        </>
+      )}
+
+      {/* 인증 완료 시 데스크탑 표시 (부팅 여부 상관없이 isAuthenticated가 우선) */}
+      {isAuthenticated && (
         <>
           {!isFullscreen && (
             <AppBar
@@ -206,7 +208,7 @@ export default function Home() {
 
             <div className="absolute bottom-4 left-4 z-[50] select-none pointer-events-none opacity-50">
               <h1 className="text-2xl font-black text-white/10 tracking-tighter uppercase select-none">
-                Tarkov Operating System by <span className="text-yellow-500/20">Terragroup</span>
+                TG-OS // <span className="text-yellow-500/20">TERRAGROUP</span> RESEARCH LABS // AUTHORIZED ACCESS ONLY
               </h1>
             </div>
           </div>
