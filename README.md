@@ -1,5 +1,5 @@
 # ❖ Tarkov Operating System
-### Web-Based Tactical Command Interface // Ver. 0.1.0-alpha
+### Web-Based Tactical Command Interface
 
 <div align="left">
 
@@ -39,8 +39,8 @@ This project respects both the game developer's rights and the open-source commu
 
 ### 1. Source Code: GNU AGPL v3
 The code logic (React/Next.js architecture) is licensed under the **GNU Affero General Public License v3.0**.
-- ✅ **Freedom**: You can modify, distribute, and use this code commercially.
-- 🔄 **Disclosure**: If you host this as a service, you must share your source code.
+- **Freedom**: You can modify, distribute, and use this code commercially.
+- **Disclosure**: If you host this as a service, you must share your source code.
 - See [LICENSE](./LICENSE) for details.
 
 ### 2. Assets & Copyright Disclaimer
@@ -53,7 +53,7 @@ This is a **fan-made application** and is strictly **non-commercial** regarding 
 
 ---
 
-## ⚡ Key Features
+## Key Features
 
 ### Desktop Experience
 - **Window Management**: Fully functional window system (Drag, Resize, Minimize, Maximize) powered by `react-draggable` and custom hooks.
