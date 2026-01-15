@@ -9,11 +9,11 @@
 
 <br/>
 
-> ** SYSTEM ALERT**
+> **SYSTEM ALERT**
 >
 > You are accessing the **TerraGroup Remote Terminal**.
 > This interface simulates a tactical desktop environment directly in your browser.
-> *Initialize Protocol...*
+> 
 
 </div>
 
@@ -67,6 +67,10 @@ This is a **fan-made application** and is strictly **non-commercial** regarding 
   - **Full Screen Mode**: Zero-distraction map view.
   - **Vector Drawing**: Plan routes and mark danger zones with `Leaflet-Geoman`.
 - **Ops Controller**: A floating, always-on-top mission control panel for managing spawn points and extract goals.
+   - **OPS (Operations)**: Manage spawn points and monitor extraction status for quick navigation.
+   - **PLAN (Mission Objectives)**: A checklist system to create, track, and complete in-game quests or looting goals dynamically.
+   - **SIT (Situation Report)**: Real-time squad status monitoring. View connected operators and current environmental threat levels.
+   - **LOG (Mission Archives)**: Browse history of previous operations. Select and restore past squad rosters and tactical map drawings directly to the live viewer.
 
 ### System Tools
 - **App Registry**: Scalable architecture to easily add new "Apps" (Windows).
