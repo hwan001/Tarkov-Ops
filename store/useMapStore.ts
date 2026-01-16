@@ -15,7 +15,7 @@ export interface POIData {
 export interface FeatureData {
   id: string;
   type: 'path' | 'marker' | 'spawn' | 'danger';
-  subType?: 'boss' | 'item' | 'quest' | 'exit';
+  subType?: 'boss' | 'item' | 'quest' | 'exit' | 'user';
   geometry: Record<string, unknown> | unknown; // points for path, {x, y} for marker
   creator?: string; // Callsign
   comment?: string;
@@ -80,12 +80,12 @@ interface MapState {
 
   // Editor State
   isEditMode: boolean;
-  drawType: 'path' | 'marker' | 'spawn' | 'danger' | 'hand';
+  drawType: 'path' | 'marker' | 'spawn' | 'danger' | 'hand' | 'ruler' | 'resection';
   mapFeatures: FeatureData[];
 
   // Actions
   toggleEditMode: () => void;
-  setDrawType: (type: 'path' | 'marker' | 'spawn' | 'danger' | 'hand') => void;
+  setDrawType: (type: 'path' | 'marker' | 'spawn' | 'danger' | 'hand' | 'ruler' | 'resection') => void;
   addFeature: (feature: FeatureData) => void;
   updateFeature: (id: string, partial: Partial<FeatureData>) => void;
   removeFeature: (id: string) => void;

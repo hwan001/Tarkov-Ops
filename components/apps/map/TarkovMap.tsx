@@ -7,7 +7,11 @@ import 'leaflet/dist/leaflet.css';
 import { useMapStore, FeatureData } from '@/store/useMapStore';
 import { useUIStore } from '@/store/useUIStore';
 import MapEditor from './MapEditor';
-import CoordinateGrid from '@/components/apps/map/layers/CoordinateGrid';
+// import CoordinateGrid from '@/components/apps/map/layers/CoordinateGrid';
+import MGRSGrid from '@/components/apps/map/layers/MGRSGrid';
+import GridCoordinates from '@/components/apps/map/layers/GridCoordinates';
+import MapRuler from './MapRuler';
+import MapTriangulator from './MapTriangulator';
 
 const CRS = L.CRS.Simple;
 
@@ -134,7 +138,8 @@ export default function TarkovMap() {
   const {
     currentMap,
     startPoint, selectedExtracts,
-    updateFeature, removeFeature, showDrawings, mapFeatures
+    updateFeature, removeFeature, showDrawings, mapFeatures,
+    showGrid, showExtracts, showBosses
   } = useMapStore();
 
   useEffect(() => {
@@ -186,7 +191,15 @@ export default function TarkovMap() {
           <>
             <ImageOverlay url={currentMap.imageUrl!} bounds={mapBounds} />
             {/* 0. Coordinate Grid (Only for Image Maps) */}
-            <CoordinateGrid />
+            {/* <CoordinateGrid /> */}
+            {showGrid &&
+              <>
+                <MGRSGrid gridSize={1000} />
+                <GridCoordinates gridSize={1000} />
+                <MapRuler />
+                <MapTriangulator />
+              </>
+            }
           </>
         ) : (
           <TileLayer
@@ -197,6 +210,7 @@ export default function TarkovMap() {
 
         {/* 2. 에디터 로직 (Drawing Inteactions only) */}
         <MapEditor />
+
 
         {/* 3. Render User Drawings (Paths, Markers, Danger) */}
         {showDrawings && mapFeatures.map((feature) => {
@@ -267,7 +281,7 @@ export default function TarkovMap() {
                   <div className="flex flex-col gap-2 p-1 relative z-[9999]">
                     {/* Type Selector */}
                     <div className="flex gap-1 flex-wrap" >
-                      {['boss', 'item', 'quest', 'exit'].map(t => (
+                      {['boss', 'item', 'quest', 'exit', 'pmc'].map(t => (
                         <button
                           key={t}
                           onClick={() => updateFeature(feature.id, { subType: t as FeatureData['subType'] })}

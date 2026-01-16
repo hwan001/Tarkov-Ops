@@ -7,7 +7,7 @@ interface CoordinateGridProps {
 }
 
 export default function CoordinateGrid({ gridSize = 100 }: CoordinateGridProps) {
-    useMap(); // Need context but don't need the instance
+    useMap();
     const { currentMap, showGrid } = useMapStore();
 
     if (!showGrid) return null;
@@ -15,12 +15,9 @@ export default function CoordinateGrid({ gridSize = 100 }: CoordinateGridProps) 
     const width = currentMap.width || 0;
     const height = currentMap.height || 0;
 
-    // Generate Vertical Lines (X axis)
     const verticalLines = [];
-    // Generate Horizontal Lines (Y axis)
     const horizontalLines = [];
 
-    // Create labels
     const labels = [];
 
     const labelIcon = (text: string) => L.divIcon({
@@ -36,11 +33,10 @@ export default function CoordinateGrid({ gridSize = 100 }: CoordinateGridProps) 
             <Polyline
                 key={`v-${x}`}
                 positions={[[0, x], [height, x]]}
-                pathOptions={{ color: 'rgba(255, 255, 255, 0.1)', weight: 1, dashArray: '4, 4' }}
+                pathOptions={{ color: 'rgba(255, 255, 255, 0.2)', weight: 1, dashArray: '4, 4' }}
             />
         );
 
-        // Add Labels at top and bottom
         labels.push(
             <Marker key={`label-x-${x}-top`} position={[0, x]} icon={labelIcon(`${x}`)} />,
             <Marker key={`label-x-${x}-bottom`} position={[height, x]} icon={labelIcon(`${x}`)} />
@@ -53,11 +49,10 @@ export default function CoordinateGrid({ gridSize = 100 }: CoordinateGridProps) 
             <Polyline
                 key={`h-${y}`}
                 positions={[[y, 0], [y, width]]}
-                pathOptions={{ color: 'rgba(255, 255, 255, 0.1)', weight: 1, dashArray: '4, 4' }}
+                pathOptions={{ color: 'rgba(255, 255, 255, 0.2)', weight: 1, dashArray: '4, 4' }}
             />
         );
 
-        // Add Labels at left and right
         labels.push(
             <Marker key={`label-y-${y}-left`} position={[y, 0]} icon={labelIcon(`${y}`)} />,
             <Marker key={`label-y-${y}-right`} position={[y, width]} icon={labelIcon(`${y}`)} />

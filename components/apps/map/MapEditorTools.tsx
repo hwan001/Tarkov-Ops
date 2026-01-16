@@ -1,7 +1,11 @@
 'use client';
 
 import { useMapStore } from '@/store/useMapStore';
-import { PenTool, Save, Upload, Route, MapPin, AlertTriangle, Hand, Trash2 } from 'lucide-react';
+import {
+    PenTool, Save, Upload, Route, MapPin,
+    AlertTriangle, Hand, Trash2, Ruler, // Ruler 아이콘 추가
+    Triangle
+} from 'lucide-react';
 import React from 'react';
 
 interface MapEditorToolsProps {
@@ -82,6 +86,24 @@ export default function MapEditorTools({ className }: MapEditorToolsProps) {
                         <Hand size={16} />
                     </button>
 
+                    {/* Ruler Tool (New) */}
+                    <button
+                        onClick={() => setDrawType('ruler')}
+                        title="Measure Distance & Bearing (Ruler)"
+                        className={`p-2.5 transition flex justify-center ${drawType === 'ruler' ? 'text-emerald-400 bg-emerald-900/30' : 'text-zinc-500 hover:text-zinc-300'}`}
+                    >
+                        <Ruler size={16} />
+                    </button>
+
+                    {/* Resection Tool (New) */}
+                    <button
+                        onClick={() => setDrawType('resection')}
+                        title="Triangulation (Resection)"
+                        className={`p-2.5 transition flex justify-center ${drawType === 'resection' ? 'text-cyan-400 bg-cyan-900/30' : 'text-zinc-500 hover:text-zinc-300'}`}
+                    >
+                        <Triangle size={16} />
+                    </button>
+
                     <button
                         onClick={() => setDrawType('path')}
                         title="Draw Path (Route)"
@@ -95,7 +117,7 @@ export default function MapEditorTools({ className }: MapEditorToolsProps) {
                         title="Place Marker (Loot, Key, Info)"
                         className={`p-2.5 transition flex justify-center ${drawType === 'marker' ? 'text-blue-400 bg-blue-900/30' : 'text-zinc-500 hover:text-zinc-300'}`}
                     >
-                        <MapPin size={16} />
+                        <MapPin size={12} />
                     </button>
 
                     <button
