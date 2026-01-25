@@ -126,24 +126,6 @@ This is a **fan-made application** and is strictly **non-commercial** regarding 
    Open [http://localhost:3000](http://localhost:3000) in your browser. 
 
 
-## Project Structure
-```bash
-tarkov-ops/
-├── app/
-│ └── page.tsx # Desktop Entry Point (Wallpaper, Icons)
-├── components/
-│ ├── MapViewer.tsx # Window Container for Map
-│ ├── TarkovMap.tsx # Leaflet Map Engine Wrapper
-│ ├── OpsController.tsx # Floating Mission Control Panel
-│ ├── MapEditor.tsx # Drawing Logic (Geoman)
-│ └── AppIcon.tsx # Desktop Launcher Icons
-├── store/
-│ ├── useMapStore.ts # Global State for Map (Zustand)
-│ └── useUIStore.ts # Global State for Desktop UI (Zustand)
-├── public/
-│ ├── maps/ # Game Map Images (4K+ Resolution)
-│ └── marker/ # Tactical Markers (SVG)
-```
 
 ---
 
