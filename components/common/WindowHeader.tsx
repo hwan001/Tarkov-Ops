@@ -1,4 +1,6 @@
-import { ReactNode, MouseEvent } from 'react';
+'use client';
+
+import { ReactNode, MouseEvent, PointerEvent } from 'react';
 import { LucideIcon } from 'lucide-react';
 
 interface WindowHeaderProps {
@@ -24,6 +26,19 @@ export default function WindowHeader({
     className = '',
     onDoubleClick
 }: WindowHeaderProps) {
+
+    // 통합 핸들러: TypeScript 에러를 방지하기 위해 이벤트를 적절히 캐스팅하여 전달합니다.
+    const handleButtonClick = (
+        e: PointerEvent<HTMLButtonElement>,
+        action?: (e: MouseEvent<any>) => void
+    ) => {
+        e.stopPropagation();
+        // PointerEvent를 MouseEvent 타입으로 안전하게 캐스팅하여 기존 함수에 전달
+        if (action) {
+            action(e as unknown as MouseEvent<any>);
+        }
+    };
+
     return (
         <div
             className={`h-8 bg-zinc-800 border-b border-zinc-700 flex items-center justify-between px-3 select-none group shrink-0 ${className}`}
@@ -36,30 +51,29 @@ export default function WindowHeader({
                 </span>
             </div>
 
-            <div className="flex gap-1.5" onMouseDown={(e) => e.stopPropagation()}>
-                {/* Green: Toggle Maximize (Window) */}
+            {/* 버튼 영역: 전파를 차단하여 헤더 드래그와 충돌 방지 */}
+            <div className="flex gap-2.5" onPointerDown={(e) => e.stopPropagation()}>
                 {onMaximize && (
                     <button
-                        onClick={onMaximize}
-                        className={`w-2.5 h-2.5 rounded-full transition-colors ${isMaximized ? 'bg-green-500 hover:bg-green-600' : 'bg-zinc-600 hover:bg-green-500'}`}
-                        title="Maximize Window"
+                        onPointerDown={(e) => handleButtonClick(e, onMaximize)}
+                        className={`w-3.5 h-3.5 rounded-full transition-all active:scale-75 ${isMaximized ? 'bg-green-500' : 'bg-zinc-600 hover:bg-green-500'
+                            }`}
+                        title="Maximize"
                     />
                 )}
 
-                {/* Yellow: Minimize */}
                 {onMinimize && (
                     <button
-                        onClick={onMinimize}
-                        className="w-2.5 h-2.5 rounded-full bg-zinc-600 hover:bg-yellow-500 transition-colors"
-                        title={isMinimized ? "Expand" : "Minimize"}
+                        onPointerDown={(e) => handleButtonClick(e, onMinimize)}
+                        className="w-3.5 h-3.5 rounded-full bg-zinc-600 hover:bg-yellow-500 transition-all active:scale-75"
+                        title="Minimize"
                     />
                 )}
 
-                {/* Red: Close */}
                 {onClose && (
                     <button
-                        onClick={onClose}
-                        className="w-2.5 h-2.5 rounded-full bg-zinc-600 hover:bg-red-500 transition-colors"
+                        onPointerDown={(e) => handleButtonClick(e, onClose)}
+                        className="w-3.5 h-3.5 rounded-full bg-zinc-600 hover:bg-red-500 transition-all active:scale-75"
                         title="Close"
                     />
                 )}

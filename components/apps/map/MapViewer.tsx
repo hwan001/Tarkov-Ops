@@ -43,15 +43,46 @@ export default function MapViewer({ name }: { name: string }) {
         return () => document.removeEventListener('fullscreenchange', handleFsChange);
     }, [setFullscreen]);
 
-    const handleToggleFullscreen = async (e?: React.MouseEvent) => {
+    // const handleToggleFullscreen = async (e?: React.MouseEvent) => {
+    //     e?.stopPropagation();
+    //     try {
+    //         if (!document.fullscreenElement) {
+    //             await document.documentElement.requestFullscreen();
+    //         } else {
+    //             await document.exitFullscreen();
+    //         }
+    //     } catch (err) { console.error(err); }
+    // };
+    const handleToggleFullscreen = async (e?: React.MouseEvent | React.PointerEvent) => {
         e?.stopPropagation();
+
+        // 모바일 Safari 등 대응을 위한 타입 확장
+        const docEl = document.documentElement as any;
+        const doc = document as any;
+
         try {
-            if (!document.fullscreenElement) {
-                await document.documentElement.requestFullscreen();
+            if (!doc.fullscreenElement && !doc.webkitFullscreenElement && !doc.mozFullScreenElement) {
+                // 표준 API 및 벤더 프리픽스 대응
+                if (docEl.requestFullscreen) {
+                    await docEl.requestFullscreen();
+                } else if (docEl.webkitRequestFullscreen) {
+                    await docEl.webkitRequestFullscreen();
+                } else if (docEl.mozRequestFullScreen) {
+                    await docEl.mozRequestFullScreen();
+                }
             } else {
-                await document.exitFullscreen();
+                if (doc.exitFullscreen) {
+                    await doc.exitFullscreen();
+                } else if (doc.webkitExitFullscreen) {
+                    await doc.webkitExitFullscreen();
+                } else if (doc.mozCancelFullScreen) {
+                    await doc.mozCancelFullScreen();
+                }
             }
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error("Fullscreen toggle failed:", err);
+            // 모바일에서는 특정 브라우저 UI 환경에 따라 거부될 수 있음
+        }
     };
 
     if (!isMounted) return null;
