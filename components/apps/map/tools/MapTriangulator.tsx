@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useMapEvents, Polyline, Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
-import { useMapStore } from '@/store/useMapStore';
+import { useEditorStore } from '@/store/useEditorStore';
 
 export default function MapTriangulator() {
-    const { drawType, addFeature, setDrawType } = useMapStore();
+    const { drawType, addFeature, setDrawType } = useEditorStore();
     const [points, setPoints] = useState<L.LatLng[]>([]);
     const [cursorPos, setCursorPos] = useState<L.LatLng | null>(null);
 
@@ -14,18 +14,16 @@ export default function MapTriangulator() {
         click(e) {
             if (drawType !== 'resection') return;
 
-            // 1단계: 랜드마크 1, 2 선택
             if (points.length < 2) {
                 setPoints(prev => [...prev, e.latlng]);
             }
-            // 2단계: 내 위치 확정 (3번째 클릭)
             else {
                 const id = crypto.randomUUID();
-                // 내 위치에 마커 생성
+
                 addFeature({
                     id,
                     type: 'marker',
-                    subType: 'user', // 또는 별도의 'user' 타입
+                    subType: 'user', // 마커 타입 추가 필요
                     geometry: {
                         type: 'Point',
                         coordinates: [e.latlng.lng, e.latlng.lat]
@@ -35,7 +33,6 @@ export default function MapTriangulator() {
                     comment: 'Estimated Position'
                 });
 
-                // 초기화 및 핸드 모드로 복귀 (연속 사용 원하면 초기화만)
                 setPoints([]);
                 setDrawType('hand');
             }
@@ -55,7 +52,6 @@ export default function MapTriangulator() {
 
     if (drawType !== 'resection' || !cursorPos) return null;
 
-    // 각도 계산 함수 (마우스 -> 타겟)
     const getBearing = (from: L.LatLng, to: L.LatLng) => {
         const dLon = (to.lng - from.lng);
         const dLat = (to.lat - from.lat);
@@ -65,7 +61,6 @@ export default function MapTriangulator() {
 
     return (
         <>
-            {/* 선택된 랜드마크 표시 (A, B 지점) */}
             {points.map((p, idx) => (
                 <Marker
                     key={idx}
@@ -79,7 +74,6 @@ export default function MapTriangulator() {
                 />
             ))}
 
-            {/* 마우스 커서에서 랜드마크로 이어지는 선 (points가 2개 다 찍혔을 때만 활성화) */}
             {points.length === 2 && points.map((p, idx) => {
                 const bearing = getBearing(cursorPos, p);
                 return (
@@ -88,7 +82,6 @@ export default function MapTriangulator() {
                             positions={[cursorPos, p]}
                             pathOptions={{ color: '#22d3ee', weight: 1, dashArray: '4, 4', opacity: 0.8 }}
                         />
-                        {/* 마우스 근처에 각도 표시 HUD */}
                         <Marker position={cursorPos} opacity={0} interactive={false}>
                             <Tooltip
                                 permanent
@@ -103,7 +96,6 @@ export default function MapTriangulator() {
                 );
             })}
 
-            {/* 마우스 커서 가이드 */}
             <Marker
                 position={cursorPos}
                 interactive={false}
@@ -113,8 +105,6 @@ export default function MapTriangulator() {
                     iconAnchor: [10, 10]
                 })}
             />
-
-            {/* 사용자 안내 문구 (마우스 따라다님) */}
             <Marker position={cursorPos} opacity={0} interactive={false}>
                 <Tooltip permanent direction="bottom" offset={[0, 20]} className="!bg-transparent !border-none !shadow-none !text-cyan-200 font-bold text-[10px] text-center">
                     {points.length === 0 && "CLICK LANDMARK 1"}

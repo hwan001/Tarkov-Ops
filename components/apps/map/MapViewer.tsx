@@ -53,11 +53,14 @@ export default function MapViewer({ name }: { name: string }) {
     //         }
     //     } catch (err) { console.error(err); }
     // };
+
     const handleToggleFullscreen = async (e?: React.MouseEvent | React.PointerEvent) => {
         e?.stopPropagation();
 
         // 모바일 Safari 등 대응을 위한 타입 확장
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const docEl = document.documentElement as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const doc = document as any;
 
         try {

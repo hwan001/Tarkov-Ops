@@ -62,7 +62,7 @@ export default function GridCoordinates({ gridSize = 1000 }: GridCoordinatesProp
         <div className="absolute bottom-4 right-4 z-[1000] flex flex-col items-end gap-1 pointer-events-none">
 
             {/* 8-Digit MGRS Reader */}
-            <div className="pointer-events-auto group cursor-pointer bg-black/80 backdrop-blur border border-amber-500/50 p-3 rounded-lg flex items-center gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all hover:bg-black/90 hover:border-amber-500"
+            <div className="pointer-events-auto group cursor-pointer bg-black/80 backdrop-blur border border-amber-500/50 p-3 rounded-sm flex items-center gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all hover:bg-black/90 hover:border-amber-500"
                 onClick={copyToClipboard}
                 title="Click to Copy Coordinates"
             >
@@ -79,17 +79,17 @@ export default function GridCoordinates({ gridSize = 1000 }: GridCoordinatesProp
                         {/* X Coordinate */}
                         <span className="tabular-nums">
                             {/* 앞 2자리 (Grid) - 밝게 */}
-                            <span className="text-amber-400">{strX?.slice(0, 2) ?? '--'}</span>
+                            <span className="text-amber-500/80">{strX?.slice(0, 2) ?? '--'}</span>
                             {/* 뒤 2자리 (Precision) - 약간 어둡게 */}
-                            <span className="text-amber-700">{strX?.slice(2) ?? '--'}</span>
+                            <span className="text-amber-700/80">{strX?.slice(2) ?? '--'}</span>
                         </span>
 
                         <span className="text-amber-900/50">/</span>
 
                         {/* Y Coordinate */}
                         <span className="tabular-nums">
-                            <span className="text-amber-400">{strY?.slice(0, 2) ?? '--'}</span>
-                            <span className="text-amber-700">{strY?.slice(2) ?? '--'}</span>
+                            <span className="text-amber-500/80">{strY?.slice(0, 2) ?? '--'}</span>
+                            <span className="text-amber-700/80">{strY?.slice(2) ?? '--'}</span>
                         </span>
                     </div>
                 </div>

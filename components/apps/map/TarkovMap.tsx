@@ -5,13 +5,15 @@ import { MapContainer, ImageOverlay, TileLayer, useMapEvents, Popup, Marker, use
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useMapStore, FeatureData } from '@/store/useMapStore';
+import { useEditorStore } from '@/store/useEditorStore';
+import { useMissionStore } from '@/store/useMissionStore';
 import { useUIStore } from '@/store/useUIStore';
 import MapEditor from './MapEditor';
 // import CoordinateGrid from '@/components/apps/map/layers/CoordinateGrid';
 import MGRSGrid from '@/components/apps/map/layers/MGRSGrid';
 import GridCoordinates from '@/components/apps/map/layers/GridCoordinates';
-import MapRuler from './MapRuler';
-import MapTriangulator from './MapTriangulator';
+import MapRuler from './tools/MapRuler';
+import MapTriangulator from './tools/MapTriangulator';
 
 const CRS = L.CRS.Simple;
 
@@ -74,7 +76,7 @@ function MapInteractionHandler() {
 
 // 클릭 이벤트를 처리하는 내부 컴포넌트
 function ClickHandler() {
-  const { setStartPoint, isStartPointLocked } = useMapStore();
+  const { setStartPoint, isStartPointLocked } = useMissionStore();
   useMapEvents({
     click(e) {
       // Shift 키 누른 상태에서는 무시 (Shift+Drag Zoom 방지 및 다른 단축키 충돌 예방)
@@ -137,10 +139,18 @@ export default function TarkovMap() {
   // Zustand 스토어 구독
   const {
     currentMap,
-    startPoint, selectedExtracts,
-    updateFeature, removeFeature, showDrawings, mapFeatures,
-    showGrid, showExtracts, showBosses
+    showGrid,
+    // showExtracts, showBosses // Not used in render logic anymore? Keep if needed for logic below
   } = useMapStore();
+
+  const {
+    startPoint, selectedExtracts
+  } = useMissionStore();
+
+  const {
+    updateFeature, removeFeature, showDrawings, mapFeatures
+  } = useEditorStore();
+
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -186,18 +196,15 @@ export default function TarkovMap() {
         <MapRegistrar />
         <MapStateSync />
 
-        {/* 1. Base Layer: Image vs Tile */}
+        {/* Base Layer: Image vs Tile */}
         {isImageMap ? (
           <>
             <ImageOverlay url={currentMap.imageUrl!} bounds={mapBounds} />
-            {/* 0. Coordinate Grid (Only for Image Maps) */}
-            {/* <CoordinateGrid /> */}
+            {/* Coordinate Grid (Only for Image Maps) */}
             {showGrid &&
               <>
                 <MGRSGrid gridSize={1000} />
                 <GridCoordinates gridSize={1000} />
-                <MapRuler />
-                <MapTriangulator />
               </>
             }
           </>
@@ -210,7 +217,8 @@ export default function TarkovMap() {
 
         {/* 2. 에디터 로직 (Drawing Inteactions only) */}
         <MapEditor />
-
+        <MapRuler />
+        <MapTriangulator />
 
         {/* 3. Render User Drawings (Paths, Markers, Danger) */}
         {showDrawings && mapFeatures.map((feature) => {
@@ -367,10 +375,6 @@ export default function TarkovMap() {
             </Popup>
           </Marker>
         )}
-
-        {/* 6. 탈출구 레이어 (Conditional) - Custom Markers handled by mapFeatures */}
-
-        {/* 7. 보스 레이어 (Conditional) - Handled by Custom Markers now */}
 
       </MapContainer>
     </div>
