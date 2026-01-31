@@ -155,7 +155,8 @@ export default function Home() {
       {!isAuthenticated && (
         <>
           {/* {!bootComplete && <BootScreen onComplete={() => setBootComplete(true)} />} */}
-          {bootComplete && <AuthOverlay onLogin={handleLoginSuccess} />}
+          {/* {bootComplete && <AuthOverlay onLogin={handleLoginSuccess} />} */}
+          <AuthOverlay onLogin={handleLoginSuccess} />
         </>
       )}
 
