@@ -19,31 +19,6 @@ export default function AuthOverlay({ onLogin }: AuthOverlayProps) {
     const [error, setError] = useState<string | null>(null);
 
     const setAuth = useAuthStore((state) => state.setAuth);
-    const checkAuth = async (token: string): Promise<{ valid: boolean; username?: string; error?: string }> => {
-        try {
-            const response = await fetch('/tarkov-api/progress', {
-                method: 'GET',
-                headers: {
-                    'Authorization': 'Bearer ' + token.trim(),
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    return { valid: false, error: 'ACCESS DENIED: Invalid API Key' };
-                }
-                return { valid: false, error: `CONNECTION FAILED: HTTP ${response.status}` };
-            }
-
-            const data = await response.json();
-            const fetchedUsername = data.username || data.user?.name || 'Operator';
-
-            return { valid: true, username: fetchedUsername };
-        } catch (err) {
-            return { valid: false, error: 'NETWORK ERROR: Uplink Unstable' };
-        }
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

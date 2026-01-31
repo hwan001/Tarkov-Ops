@@ -21,6 +21,7 @@ export default function WindowHeader({
     onClose,
     onMinimize,
     onMaximize,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     isMinimized,
     isMaximized,
     className = '',
@@ -30,11 +31,13 @@ export default function WindowHeader({
     // 통합 핸들러: TypeScript 에러를 방지하기 위해 이벤트를 적절히 캐스팅하여 전달합니다.
     const handleButtonClick = (
         e: PointerEvent<HTMLButtonElement>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         action?: (e: MouseEvent<any>) => void
     ) => {
         e.stopPropagation();
         // PointerEvent를 MouseEvent 타입으로 안전하게 캐스팅하여 기존 함수에 전달
         if (action) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             action(e as unknown as MouseEvent<any>);
         }
     };

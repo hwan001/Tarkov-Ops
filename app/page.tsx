@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useMapStore } from '@/store/useMapStore';
 import { useUIStore } from '@/store/useUIStore';
-import { useAuthStore } from '@/store/useAuthStore'; // Auth Store 추가
+import { useAuthStore } from '@/store/useAuthStore';
 
 import OpsController from '@/components/apps/map/OpsController';
 import MapViewer from '@/components/apps/map/MapViewer';
 import AppIcon from '@/components/common/AppIcon';
-import BootScreen from '@/components/common/BootScreen';
+// import BootScreen from '@/components/common/BootScreen';
 import AuthOverlay from '@/components/common/AuthOverlay';
 import SettingsWindow from '@/components/apps/settings/SettingsWindow';
 import BrowserWindow from '@/components/apps/browser/BrowserWindow';
@@ -73,6 +73,7 @@ export default function Home() {
   useEffect(() => {
     // 이미 인증되어 있다면 부팅 화면을 보여주지 않고 바로 진입
     if (isAuthenticated) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBootComplete(true);
     }
   }, [isAuthenticated]);
@@ -153,7 +154,7 @@ export default function Home() {
       {/* 인증되지 않았을 때만 부팅/로그인 화면 표시 */}
       {!isAuthenticated && (
         <>
-          {!bootComplete && <BootScreen onComplete={() => setBootComplete(true)} />}
+          {/* {!bootComplete && <BootScreen onComplete={() => setBootComplete(true)} />} */}
           {bootComplete && <AuthOverlay onLogin={handleLoginSuccess} />}
         </>
       )}

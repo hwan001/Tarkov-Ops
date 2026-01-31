@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import Image from 'next/image';
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 import { useMapStore } from '@/store/useMapStore';
 import { LucideIcon } from 'lucide-react';
@@ -28,6 +29,7 @@ export default function AppIcon({
     const dragStartPos = useRef({ x: 0, y: 0 });
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsMounted(true);
     }, []);
 
@@ -80,7 +82,7 @@ export default function AppIcon({
                     ${isMapOpen ? 'grayscale opacity-75' : ''}
                 `}>
                     {iconUrl ? (
-                        <img src={iconUrl} alt={name} className="w-full h-full object-cover pointer-events-none" />
+                        <Image src={iconUrl} alt={name} fill className="object-cover pointer-events-none" sizes="56px" />
                     ) : Icon ? (
                         <Icon size={32} className={`${isSelected ? 'text-blue-400' : 'text-zinc-400'}`} />
                     ) : (

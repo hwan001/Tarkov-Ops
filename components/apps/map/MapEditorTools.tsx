@@ -1,9 +1,10 @@
 'use client';
 
+import { useEditorStore } from '@/store/useEditorStore';
 import { useMapStore } from '@/store/useMapStore';
 import {
     PenTool, Save, Upload, Route, MapPin,
-    AlertTriangle, Hand, Trash2, Ruler, // Ruler 아이콘 추가
+    AlertTriangle, Hand, Trash2, Ruler,
     Triangle
 } from 'lucide-react';
 import React from 'react';
@@ -13,10 +14,12 @@ interface MapEditorToolsProps {
 }
 
 export default function MapEditorTools({ className }: MapEditorToolsProps) {
+    // Split Store Usage
+    const { currentMap, setCurrentMap } = useMapStore();
     const {
-        isEditMode, drawType, mapFeatures, currentMap,
-        setDrawType, setFeatures, setCurrentMap, clearFeatures, toggleEditMode
-    } = useMapStore();
+        isEditMode, drawType, mapFeatures,
+        setDrawType, setFeatures, clearFeatures, toggleEditMode
+    } = useEditorStore();
 
     const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
 
@@ -86,7 +89,7 @@ export default function MapEditorTools({ className }: MapEditorToolsProps) {
                         <Hand size={16} />
                     </button>
 
-                    {/* Ruler Tool (New) */}
+                    {/* Ruler Tool */}
                     <button
                         onClick={() => setDrawType('ruler')}
                         title="Measure Distance & Bearing (Ruler)"
@@ -95,7 +98,7 @@ export default function MapEditorTools({ className }: MapEditorToolsProps) {
                         <Ruler size={16} />
                     </button>
 
-                    {/* Resection Tool (New) */}
+                    {/* Resection Tool */}
                     <button
                         onClick={() => setDrawType('resection')}
                         title="Triangulation (Resection)"

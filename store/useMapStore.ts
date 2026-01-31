@@ -22,20 +22,6 @@ export interface FeatureData {
   color?: string;
 }
 
-export interface SavedMission {
-  id: string;
-  title: string;
-  mapId: string;
-  date: number;
-  data: {
-    startPoint: { x: number, y: number } | null;
-    selectedExtracts: string[];
-    mapFeatures: FeatureData[];
-    isStartPointLocked: boolean;
-    customMapData?: MapData; 
-  }
-}
-
 export interface MapData {
   id: string;
   name: string;
@@ -45,6 +31,14 @@ export interface MapData {
   width?: number; 
   height?: number;
   attribution?: string; // For OSM/Google compliance
+  
+  // Custom Tile Grid Data (for stitching OSM tiles into a pseudo-image map)
+  tileGrid?: {
+    base: { z: number; x: number; y: number };
+    range: number;
+    sideCount: number;
+  };
+  tileSize?: number;
 }
 
 export const MAPS: MapData[] = [
@@ -60,64 +54,36 @@ interface MapState {
   addMap: (map: MapData) => void;
   removeMap: (id: string) => void;
 
-  // Mission Planning
-  startPoint: { x: number, y: number } | null;
-  selectedExtracts: string[]; // ONE POI ID (Single Selection)
-  isStartPointLocked: boolean; // Lock logic
-  setStartPoint: (point: { x: number, y: number } | null) => void;
-  toggleExtractSelection: (id: string) => void;
-  toggleStartPointLock: () => void;
-  resetMission: () => void;
-
-  // Map Controls (External)
-  // mapInstance, isFullscreen moved to useUIStore
-  currentZoom: number; // Current Zoom Level
-  isMapOpen: boolean; // Window Visibility
-  isOpsControllerOpen: boolean; // New state for OpsController visibility
+  // Map Controls (UI)
+  currentZoom: number; 
+  isMapOpen: boolean; 
+  isOpsControllerOpen: boolean; 
   setZoom: (zoom: number) => void;
   toggleMapOpen: () => void;
-  toggleOpsController: () => void; // Action to toggle OpsController
+  toggleOpsController: () => void; 
 
-  // Editor State
-  isEditMode: boolean;
-  drawType: 'path' | 'marker' | 'spawn' | 'danger' | 'hand' | 'ruler' | 'resection';
-  mapFeatures: FeatureData[];
-
-  // Actions
-  toggleEditMode: () => void;
-  setDrawType: (type: 'path' | 'marker' | 'spawn' | 'danger' | 'hand' | 'ruler' | 'resection') => void;
-  addFeature: (feature: FeatureData) => void;
-  updateFeature: (id: string, partial: Partial<FeatureData>) => void;
-  removeFeature: (id: string) => void;
-  clearFeatures: () => void;
-  setFeatures: (features: FeatureData[]) => void;
-  
-  // Layers Visibility
+  // Layers Visibility (Static Data)
   showExtracts: boolean;
   showBosses: boolean;
   showQuests: boolean;
   showGrid: boolean;
-  showDrawings: boolean; 
+
   toggleExtracts: () => void;
   toggleBosses: () => void;
   toggleQuests: () => void;
   toggleGrid: () => void;
-  toggleDrawings: () => void;
-
-  // Mission Manager
-  savedMissions: SavedMission[];
-  saveMission: (mission: SavedMission) => void;
-  loadMission: (id: string) => void; // Optional if handled in UI
-  deleteMission: (id: string) => void;
-  initMissions: () => void;
 }
 
 export const useMapStore = create<MapState>((set) => ({
   // Default Map
   maps: MAPS,
   currentMap: MAPS[0],
-  setCurrentMap: (map) => set({ currentMap: map, mapFeatures: [], startPoint: null, selectedExtracts: [], isStartPointLocked: true }),
+  // Note: We no longer reset mission/editor state here directly. 
+  // Components should react to map changes if needed, or we can add a listener.
+  setCurrentMap: (map) => set({ currentMap: map }),
+  
   addMap: (newMap) => set((state) => ({ maps: [...state.maps, newMap] })),
+  
   removeMap: (id) => set((state) => {
       const newMaps = state.maps.filter(m => m.id !== id);
       // If current map is removed, switch to the first available one
@@ -125,87 +91,22 @@ export const useMapStore = create<MapState>((set) => ({
       return { maps: newMaps, currentMap: newCurrent };
   }),
 
-  // Mission Planning
-  startPoint: null,
-  selectedExtracts: [],
-  isStartPointLocked: true, // Default Locked per request
-  setStartPoint: (point) => set({ startPoint: point }),
-  toggleExtractSelection: (id) => set((state) => {
-    // Single usage logic: If clicked same, deselect. If clicked different, replace.
-    const isSelected = state.selectedExtracts.includes(id);
-    return {
-      selectedExtracts: isSelected ? [] : [id] 
-    };
-  }),
-  toggleStartPointLock: () => set((state) => ({ isStartPointLocked: !state.isStartPointLocked })),
-  resetMission: () => set({ startPoint: null, selectedExtracts: [], isStartPointLocked: true }),
-
-  // Map Controls (External)
+  // Map Controls
   currentZoom: 0,
   isMapOpen: false,
-  isOpsControllerOpen: false, // Default
+  isOpsControllerOpen: false, 
   setZoom: (zoom) => set({ currentZoom: zoom }),
   toggleMapOpen: () => set((state) => ({ isMapOpen: !state.isMapOpen })),
   toggleOpsController: () => set((state) => ({ isOpsControllerOpen: !state.isOpsControllerOpen })),
 
-  // Editor Defaults
-  isEditMode: false,
-  drawType: 'hand', // Default
-  mapFeatures: [],
-  
-  toggleEditMode: () => set((state) => ({ isEditMode: !state.isEditMode })),
-  setDrawType: (type) => set({ drawType: type }),
-  addFeature: (feature) => set((state) => ({ mapFeatures: [...state.mapFeatures, feature] })),
-  updateFeature: (id, partial) => set((state) => ({
-    mapFeatures: state.mapFeatures.map((f) => f.id === id ? { ...f, ...partial } : f)
-  })),
-  removeFeature: (id) => set((state) => ({ 
-    mapFeatures: state.mapFeatures.filter((f) => f.id !== id) 
-  })),
-  clearFeatures: () => set({ mapFeatures: [] }),
-  setFeatures: (features) => set({ mapFeatures: features }),
-
-  showExtracts: false, // Default hidden to show cleaned map first
+  // Layers
+  showExtracts: false, 
   showBosses: false,
   showQuests: false,
-  showGrid: false, // Default Grid OFF
-  showDrawings: true, // Default Drawings ON
+  showGrid: false, 
+  
   toggleExtracts: () => set((state) => ({ showExtracts: !state.showExtracts })),
   toggleBosses: () => set((state) => ({ showBosses: !state.showBosses })),
   toggleQuests: () => set((state) => ({ showQuests: !state.showQuests })),
   toggleGrid: () => set((state) => ({ showGrid: !state.showGrid })),
-  toggleDrawings: () => set((state) => ({ showDrawings: !state.showDrawings })),
-
-
-  // Mission Manager (Saved Missions)
-  savedMissions: [],
-  saveMission: (mission) => set((state) => {
-    const updated = [mission, ...state.savedMissions.filter(m => m.id !== mission.id)];
-    localStorage.setItem('tarkov-ops-missions', JSON.stringify(updated));
-    return { savedMissions: updated };
-  }),
-  loadMission: () => {
-    // Logic handled in component or here? Easier here if we pass everything. 
-    // Actually store actions usually update state.
-    // Let's implement delete first.
-    return; 
-  },
-  deleteMission: (id) => set((state) => {
-    const updated = state.savedMissions.filter(m => m.id !== id);
-    localStorage.setItem('tarkov-ops-missions', JSON.stringify(updated));
-    return { savedMissions: updated };
-  }),
-  initMissions: () => {
-    const saved = localStorage.getItem('tarkov-ops-missions');
-    if (saved) {
-        try {
-            set({ savedMissions: JSON.parse(saved) });
-        } catch (e) {
-            console.error("Failed to parse missions", e);
-        }
-    }
-  }
 }));
-
-// Initialize missions on module load (or call in component)
-// Better to export a hook or call init in component

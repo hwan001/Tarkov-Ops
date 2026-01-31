@@ -2,26 +2,25 @@
 
 import { useEffect, useRef } from 'react';
 import * as Y from 'yjs';
-import { useMapStore } from '@/store/useMapStore';
+// import { useMapStore } from '@/store/useMapStore'; // Removed as no longer needed for these props
+import { useEditorStore } from '@/store/useEditorStore';
+import { useMissionStore } from '@/store/useMissionStore';
 import { useSquadStore } from '@/store/useSquadStore';
 
 /**
  * SquadManager
- * Handles the logic (Controller) for syncing local MapStore with remote Yjs Doc.
+ * Handles the logic (Controller) for syncing local stores with remote Yjs Doc.
  * This component is headless and just runs the sync effects.
  */
 export default function SquadManager() {
     const { ydoc, isConnected } = useSquadStore();
-    const {
-        mapFeatures, setFeatures,
-        startPoint,
-        selectedExtracts
-    } = useMapStore();
+    const { mapFeatures, setFeatures } = useEditorStore();
+    const { startPoint, selectedExtracts } = useMissionStore();
 
     // To prevent loop: Local -> Yjs -> Local -> Yjs
     const isRemoteUpdate = useRef(false);
 
-    // 1. Sync Features (Drawings)
+    // 1. Sync Features (Drawings) - EditorStore
     useEffect(() => {
         if (!ydoc || !isConnected) return;
 
@@ -40,11 +39,12 @@ export default function SquadManager() {
         return () => yFeatures.unobserve(observer);
     }, [ydoc, isConnected, setFeatures]);
 
-    // Listener: Local -> Remote
+    // Listener: Local -> Remote (Drawings)
     useEffect(() => {
         if (!ydoc || !isConnected || isRemoteUpdate.current) return;
 
         const yFeatures = ydoc.getArray('mapFeatures');
+        // Simple JSON comparison to avoid unnecessary updates
         if (JSON.stringify(yFeatures.toArray()) !== JSON.stringify(mapFeatures)) {
             ydoc.transact(() => {
                 const arr = yFeatures.toArray();
@@ -56,7 +56,7 @@ export default function SquadManager() {
         }
     }, [mapFeatures, ydoc, isConnected]);
 
-    // Using yMap for key-value sync
+    // 2. Sync Mission Data (StartPoint, Extracts) - MissionStore
     useEffect(() => {
         if (!ydoc || !isConnected) return;
 
@@ -67,13 +67,13 @@ export default function SquadManager() {
             isRemoteUpdate.current = true;
             if (event.keysChanged.has('startPoint')) {
                 const sp = yMission.get('startPoint');
-                // @ts-expect-error -- useMapStore typing is strict
-                useMapStore.setState({ startPoint: sp });
+                // @ts-expect-error -- Direct store update
+                useMissionStore.setState({ startPoint: sp });
             }
             if (event.keysChanged.has('selectedExtracts')) {
                 const ex = yMission.get('selectedExtracts');
-                // @ts-expect-error -- useMapStore typing is strict
-                useMapStore.setState({ selectedExtracts: ex });
+                // @ts-expect-error -- Direct store update
+                useMissionStore.setState({ selectedExtracts: ex });
             }
             isRemoteUpdate.current = false;
         };
