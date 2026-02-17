@@ -13,7 +13,7 @@ export default function Wallpaper() {
                 alt="Wallpaper"
                 className="w-full h-full object-cover opacity-100"
             />
-            <div className="absolute inset-0 bg-black/60 mix-blend-multiply" />
+            <div className="absolute inset-0 bg-black/40 mix-blend-multiply" />
         </div >
     );
 }

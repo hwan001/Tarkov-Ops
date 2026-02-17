@@ -208,9 +208,13 @@ export default function Home() {
               />
             ))}
 
-            <div className="absolute bottom-4 left-4 z-[50] select-none pointer-events-none opacity-50">
-              <h1 className="text-2xl font-black text-white/10 tracking-tighter uppercase select-none">
-                TG-OS // <span className="text-yellow-500/20">TERRAGROUP</span> RESEARCH LABS // AUTHORIZED ACCESS ONLY
+            <div className="absolute bottom-4 left-4 z-[50] select-none pointer-events-none opacity-80">
+              <h1 className="text-[10px] font-bold text-white/40 tracking-[0.2em] uppercase select-none flex items-center gap-2">
+                <span className="text-yellow-500/60">TERRAGROUP OS</span>
+                <span className="w-1 h-1 bg-white/20 rounded-full" />
+                <span className="text-white/40">UNOFFICIAL FAN-MADE PROJECT</span>
+                <span className="w-1 h-1 bg-white/20 rounded-full" />
+                <span className="text-white/40">FOR COMMUNITY USE</span>
               </h1>
             </div>
           </div>

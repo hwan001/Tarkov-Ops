@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, User, Network, Monitor, RefreshCw, Trash2, Save } from 'lucide-react';
+import { Settings, User, Network, Monitor, RefreshCw, Trash2, Save, Info, CodeXml, ExternalLink } from 'lucide-react';
 import { useSquadStore } from '@/store/useSquadStore';
 import { useSettingStore } from '@/store/useSettingStore';
 import { useAuthStore } from '@/store/useAuthStore'; // AuthStore 추가
@@ -13,10 +13,10 @@ interface SettingsWindowProps {
     onClose: () => void;
 }
 
-type TabType = 'general' | 'network' | 'system';
+type TabType = 'user' | 'network' | 'system' | 'info';
 
 export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps) {
-    const [activeTab, setActiveTab] = useState<TabType>('general');
+    const [activeTab, setActiveTab] = useState<TabType>('user');
 
     // 1. Auth Store Hooks (API Key 및 인증 정보 관리)
     const authApiKey = useAuthStore((state) => state.apiKey);
@@ -71,15 +71,12 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
 
     const handleClearData = () => {
         if (confirm('CAUTION: This will wipe all local data including map drawings and authentication. Continue?')) {
-            // Auth Store 로그아웃 처리
             logout();
-            // 로컬 스토리지 전체 삭제
             localStorage.clear();
             location.reload();
         }
     };
 
-    // Test Connection Logic (변경 없음)
     const handleTestConnection = async () => {
         setTestStatus('loading');
         setTestMessage('Initializing connection probe...');
@@ -160,7 +157,7 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'general':
+            case 'user':
                 return (
                     <div className="space-y-4">
                         <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2 border-b border-zinc-800 pb-1">User Profile</h3>
@@ -344,6 +341,54 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
                         </button>
                     </div>
                 );
+            case 'info':
+                return (
+                    <div className="space-y-6">
+                        {/* Project Header */}
+                        <div>
+                            <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2 border-b border-zinc-800 pb-1 tracking-tighter">Project Information</h3>
+                            <p className="text-[10px] text-zinc-400 leading-relaxed px-1">
+                                This is a fan-made project inspired by the Escape from Tarkov universe.
+                                All assets and trademarks belong to Battlestate Games.
+                            </p>
+                        </div>
+
+                        {/* Creator Info */}
+                        <div className="space-y-2">
+                            <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2 border-b border-zinc-800 pb-1 tracking-tighter">Development</h3>
+
+                            <div className="flex items-center justify-between p-2 rounded bg-zinc-900/30 border border-zinc-800/50">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-7 h-7 rounded bg-zinc-800/50 flex items-center justify-center">
+                                        <User size={14} className="text-zinc-500" />
+                                    </div>
+                                    <div>
+                                        <div className="text-[9px] text-zinc-500 font-bold leading-none mb-1">CREATOR</div>
+                                        <div className="text-[11px] font-medium text-zinc-300">h001</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <a
+                                href="https://github.com/hwan001/Tarkov-Ops"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full flex items-center justify-between p-2 rounded bg-zinc-900/30 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all group"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-7 h-7 rounded bg-zinc-800/50 flex items-center justify-center group-hover:bg-zinc-700 transition-colors">
+                                        <CodeXml size={14} className="text-zinc-500 group-hover:text-cyan-400" />
+                                    </div>
+                                    <div>
+                                        <div className="text-[9px] text-zinc-500 font-bold leading-none mb-1">REPOSITORY</div>
+                                        <div className="text-[11px] font-medium text-zinc-300">View on GitHub</div>
+                                    </div>
+                                </div>
+                                <ExternalLink size={12} className="text-zinc-600 group-hover:text-zinc-400" />
+                            </a>
+                        </div>
+                    </div>
+                );
             default:
                 return null;
         }
@@ -363,10 +408,10 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
             {/* Sidebar Tabs */}
             <div className="w-16 bg-zinc-950 flex flex-col border-r border-zinc-800 pt-2 shrink-0">
                 <TabButton
-                    active={activeTab === 'general'}
-                    onClick={() => setActiveTab('general')}
+                    active={activeTab === 'user'}
+                    onClick={() => setActiveTab('user')}
                     icon={User}
-                    label="General"
+                    label="User"
                 />
                 <TabButton
                     active={activeTab === 'network'}
@@ -379,6 +424,12 @@ export default function SettingsWindow({ isOpen, onClose }: SettingsWindowProps)
                     onClick={() => setActiveTab('system')}
                     icon={Monitor}
                     label="System"
+                />
+                <TabButton
+                    active={activeTab === 'info'}
+                    onClick={() => setActiveTab('info')}
+                    icon={Info}
+                    label="Info"
                 />
             </div>
 
